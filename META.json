@@ -1,0 +1,44 @@
+{
+    "name": "pg_cld2",
+    "abstract": "Use cld2 language detection from Postgres",
+    "description": "Provides a function that detects the human language of a block of text.",
+    "version": "1.0.0",
+    "maintainer": "Mark Hedges <the.real.mark.hedges@gmail.com>",
+    "license": "postgresql",
+    "provides": {
+        "pg_cld2": {
+            "abstract": "Use cld2 language detection from Postgres",
+            "description": "Provides a function that detects the human language of a block of text.",
+            "file": "sql/pg_cld2.sql",
+            "docfile": "doc/pg_cld2.mmd",
+            "version": "1.0.0"
+      }
+   },
+   "prereqs": {
+      "runtime": {
+         "requires": {
+            "PostgreSQL": "9.0.0"
+         }
+      }
+   },
+   "resources": {
+      "bugtracker": {
+         "web": "https://github.com/hedges333/pg_cld2/issues"
+      },
+      "repository": {
+        "url":  "git://git@github.com:hedges333/pg_cld2.git",
+        "web":  "http://github.com/hedges333/pg_cld2",
+        "type": "git"
+      }
+   },
+   "generated_by": "Mark Hedges",
+   "meta-spec": {
+      "version": "1.0.0",
+      "url": "http://pgxn.org/meta/spec.txt"
+   },
+   "tags": [
+      "cld2",
+      "language",
+      "language detection"
+   ]
+}
