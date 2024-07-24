@@ -9,6 +9,7 @@
 #include "utils/typcache.h"
 #include "utils/tuplestore.h"
 #include "access/htup_details.h"  // for heap_form_tuple
+#include "funcapi.h"
 
 #ifdef PG_MODULE_MAGIC
 PG_MODULE_MAGIC;
