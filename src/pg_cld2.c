@@ -123,5 +123,5 @@ pg_cld2_detect_language(PG_FUNCTION_ARGS)
     pfree(input_str);
 
     // Return the tuple
-    PG_RETURN_DATUM(DatumGetHeapTuple(tuple));
+    PG_RETURN_DATUM(HeapTupleGetDatum(tuple));
 }
