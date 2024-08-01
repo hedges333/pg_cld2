@@ -29,20 +29,16 @@ DOCS = README.md
 MODULE_big = pg_cld2
 OBJS = $(SRCDIR)/pg_cld2.o
 
-# GPT seems to make this more and more complicated and I don't know what I'm doing yet
-#$(MODULE_big).so: $(OBJS)
-#$(MAKE) -C $(SRCDIR) $(MODULE_big).so
-
 # Test settings
 TESTS = $(wildcard test/in/*.sql)
 
-REGRESS = $(notdir $(basename $(wildcard test/in/*.sql)))
+REGRESS = $(notdir $(wildcard test/in/*.sql))
 
-#REGRESS = pg_regress
-REGRESS_OPTS = --inputdir=test/in --outputdir=test/out --expectfile=test/expected
+REGRESS = pg_regress
+REGRESS_OPTS = --inputdir=test/in --outputdir=test/out
 
 installcheck: all
-	$(PG_REGRESS) $(REGRESS)
+	$(PG_REGRESS) $(REGRESS) $(REGRESS_OPTS)
 
 EXTRA_CLEAN = $(wildcard test/out/*.out) $(MODULE_BIG.so)
 
@@ -52,10 +48,6 @@ all:
 	$(MAKE) -C $(SRCDIR)
 	$(MAKE) -C $(SRCDIR) $(MODULE_big).so
 
-#installdirs:
-#$(MKDIR_P) '$(DESTDIR)$(datadir)/extension'
-#$(MKDIR_P) '$(DESTDIR)$(libdir)'
-
 install-data: installdirs
 	$(INSTALL_DATA) $(DATA) '$(DESTDIR)$(datadir)/extension/'
 
@@ -63,9 +55,6 @@ install-lib: installdirs
 	$(INSTALL_SHLIB) '$(SRCDIR)/$(MODULE_big).so' '$(DESTDIR)$(libdir)/'
 
 # Regression tests
-# test: install
-# @echo "Running regression tests..."
-# $(pg_regress_installcheck) --inputdir=$(TESTDIR)/in --outputdir=$(TESTDIR)/out --expecteddir=$(TESTDIR)/expected
 
 # Clean up build files
 clean:

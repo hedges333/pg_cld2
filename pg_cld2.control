@@ -3,6 +3,5 @@ comment = 'cld2 language detection function for Postgres'
 default_version = '1.0.0'
 module_pathname = '$libdir/pg_cld2'
 relocatable = true
-requires = 'pgtap'
-build_depends = 'libcld2-dev'
+#build_depends = 'libcld2-dev'
 
