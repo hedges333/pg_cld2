@@ -12,9 +12,6 @@ PG_LIBS = $(shell $(PG_CONFIG) --libs)
 PG_INCLUDEDIR_SERVER = $(shell $(PG_CONFIG) --includedir-server)
 include $(PGXS)
 
-# Add architecture-specific include path
-CXXFLAGS = -I/usr/include/c++/$(shell $(g++ -dumpversion)) -I/usr/include/x86_64-linux-gnu/c++/$(shell $(g++ -dumpversion))
-
 # Directories
 SQLDIR = sql
 TESTDIR = test
@@ -43,16 +40,13 @@ installcheck: all
 EXTRA_CLEAN = $(wildcard test/out/*.out)
 
 # Build and clean rules
-all: build
-
-build:
+all:
 	$(MAKE) -C $(SRCDIR)
 
 # Regression tests
 # test: install
-	# @echo "Running regression tests..."
-	# $(pg_regress_installcheck) --inputdir=$(TESTDIR)/in --outputdir=$(TESTDIR)/out --expecteddir=$(TESTDIR)/expected
-	# ???
+# @echo "Running regression tests..."
+# $(pg_regress_installcheck) --inputdir=$(TESTDIR)/in --outputdir=$(TESTDIR)/out --expecteddir=$(TESTDIR)/expected
 
 # Clean up build files
 clean:

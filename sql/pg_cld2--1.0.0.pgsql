@@ -150,27 +150,35 @@ BEGIN
         cld2_language_hint,     -- text
         encoding_hint,          -- int
         best_effort             -- boolean
-    ) INTO
-        return_record.language_1_cld2_name,
-        return_record.language_1_code,
-        return_record.language_1_script,
-        return_record.language_1_percent,
-        return_record.language_1_normalized_score,
-        return_record.language_2_cld2_name,
-        return_record.language_2_code,
-        return_record.language_2_script,
-        return_record.language_2_percent,
-        return_record.language_2_normalized_score,
-        return_record.language_3_cld2_name,
-        return_record.language_3_code,
-        return_record.language_3_script,
-        return_record.language_3_percent,
-        return_record.language_3_normalized_score,
-        return_record.text_bytes,
-        return_record.is_reliable,
-        return_record.valid_prefix_bytes;
+    ) INTO return_record;
+        -- return_record.language_1_cld2_name,
+        -- return_record.language_1_code,
+        -- return_record.language_1_script,
+        -- return_record.language_1_percent,
+        -- return_record.language_1_normalized_score,
+        -- return_record.language_2_cld2_name,
+        -- return_record.language_2_code,
+        -- return_record.language_2_script,
+        -- return_record.language_2_percent,
+        -- return_record.language_2_normalized_score,
+        -- return_record.language_3_cld2_name,
+        -- return_record.language_3_code,
+        -- return_record.language_3_script,
+        -- return_record.language_3_percent,
+        -- return_record.language_3_normalized_score,
+        -- return_record.text_bytes,
+        -- return_record.is_reliable,
+        -- return_record.valid_prefix_bytes;
 
     -- now figure out the language pg_name's from the cld2 name or code
+    SELECT cfgname
+        INTO return_record.mll_ts_name
+        FROM    pg_catalog.pg_ts_config
+        WHERE   cfgname = LOWER( return_record.mll_cld2_name );
+    IF NOT FOUND THEN
+        return_record.mll_ts_name = 'simple';
+    END IF;
+
     SELECT cfgname
         INTO    return_record.language_1_ts_name
         FROM    pg_catalog.pg_ts_config
@@ -220,7 +228,7 @@ INSERT INTO pg_cld2_encodings VALUES
 ('ISO_8859_8', 'ISO_8859_8', 7, 'Hebrew'),
 ('JAPANESE_EUC_JP', 'EUC_JP', 10, 'EUC_JP'),
 ('JAPANESE_SHIFT_JIS', 'SJIS', 11, 'SJS'),
-('JAPANESE_JIS', 'EUC_JIS_2004', 12, 'JIS'), 
+('JAPANESE_JIS', 'EUC_JIS_2004', 12, 'JIS, probably'),
 ('CHINESE_BIG5', 'BIG5', 13, 'BIG5'),
 ('CHINESE_GB', 'GB18030', 14, 'GB'),
 ('CHINESE_EUC_CN', 'EUC_TW', 15, 'Misnamed. Should be EUC_TW. Was Basis Tech CNS11643EUC, before that EUC-CN(!)'),
@@ -241,22 +249,22 @@ INSERT INTO pg_cld2_encodings VALUES
 ('ISO_8859_15', 'LATIN9', 30, 'aka ISO_8859_0 aka ISO_8859_1 euroized'),
 ('MSFT_CP1254', 'WIN1254', 31, 'used for Turkish'),
 ('MSFT_CP1257', 'WIN1257', 32, 'used in Baltic countries'),
-('ISO_8859_11', NULL, 33, 'aka TIS-620, used for Thai'),    -- "not supported yet"
+('ISO_8859_11', NULL, 33, 'aka TIS-620, used for Thai - "not supported yet"'),
 ('MSFT_CP874', 'WIN874', 34, 'used for Thai'),
 ('MSFT_CP1256', 'WIN1256', 35, 'used for Arabic'),
 ('MSFT_CP1255', 'WIN1255', 36, 'Logical Hebrew Microsoft'),
-('ISO_8859_8_I', 'ISO_8859_8', 37, 'Iso Hebrew Logical'),   -- guess
-('HEBREW_VISUAL', NULL, 38, 'Iso Hebrew Visual'),   -- no idea
-('CZECH_CP852', NULL, 39, NULL), -- no idea
-('CZECH_CSN_369103', NULL, 40, 'aka ISO_IR_139 aka KOI8_CS'), -- no idea
+('ISO_8859_8_I', 'ISO_8859_8', 37, 'Iso Hebrew Logical - guess'),
+('HEBREW_VISUAL', NULL, 38, 'Iso Hebrew Visual - no idea'),
+('CZECH_CP852', NULL, 39, 'no idea'),
+('CZECH_CSN_369103', NULL, 40, 'aka ISO_IR_139 aka KOI8_CS - no idea'),
 ('MSFT_CP1253', 'WIN1253', 41, 'used for Greek'),
 ('RUSSIAN_CP866', 'WIN866', 42, NULL),
 ('ISO_8859_13', 'LATIN7', 43, 'Handled by iconv in glibc'),
-('ISO_2022_KR', NULL, 44, NULL), -- no idea
+('ISO_2022_KR', NULL, 44, 'no idea'),
 ('GBK', 'GBK', 45, NULL),
 ('GB18030', 'GB18030', 46, NULL),
-('BIG5_HKSCS', NULL, 47, NULL), -- no match, presumably Hong Kong variant?
-('ISO_2022_CN', NULL, 48, NULL), -- no match
+('BIG5_HKSCS', NULL, 47, 'no match, presumably Hong Kong variant?'),
+('ISO_2022_CN', NULL, 48, 'no match'),
 ('TSCII', NULL, 49, 'Following 4 encodings are deprecated (font encodings)'),
 ('TAMIL_MONO', NULL, 50, NULL),
 ('TAMIL_BI', NULL, 51, NULL),
