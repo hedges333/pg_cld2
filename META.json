@@ -1,16 +1,15 @@
 {
     "name": "pg_cld2",
     "abstract": "Use cld2 language detection from Postgres",
-    "description": "Provides a function that detects the human language of a block of text.",
+    "description": "A function to detect likely human language and script of text.",
     "version": "1.0.0",
     "maintainer": "Mark Hedges <the.real.mark.hedges@gmail.com>",
     "license": "postgresql",
     "provides": {
         "pg_cld2": {
-            "abstract": "Use cld2 language detection from Postgres",
-            "description": "Provides a function that detects the human language of a block of text.",
+            "abstract": "Use cld2 language detection from a Postgres function.",
             "file": "sql/pg_cld2.sql",
-            "docfile": "doc/pg_cld2.mmd",
+            "docfile": "doc/pg_cld2.md",
             "version": "1.0.0"
       }
    },

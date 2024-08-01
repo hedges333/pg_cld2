@@ -291,3 +291,6 @@ INSERT INTO pg_cld2_encodings VALUES
 ('SOFTBANK_SHIFT_JIS', 'SJIS', 72, NULL),
 ('KDDI_ISO_2022_JP', NULL, 73, 'ISO-2022-JP variants used by KDDI and SoftBank.'),
 ('SOFTBANK_ISO_2022_JP', NULL, 74, ' valid Encoding enum, it is only used to indicate the total number of Encodings.');
+
+-- allow dumping and changing the encodings table
+SELECT pg_catalog.pg_extension_config_dump('pg_cld2_encodings', '');
