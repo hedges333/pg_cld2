@@ -1,29 +1,42 @@
 CREATE TYPE pg_cld2_language_detection AS (
-    language_1_cld2_name            VARCHAR(255),       -- most likely language name, e.g. "ENGLISH"
-    language_1_code                 VARCHAR(255),       -- most likely language code, e.g. "en"
-    language_1_script               VARCHAR(255),       -- most likely script, e.g. "Latin" (?)
-    language_1_percent              SMALLINT,           -- how likely this language is
-    language_1_normalized_score     DOUBLE PRECISION,   -- mumble mumble
-    language_1_ts_name              VARCHAR(255),       -- a guess at language match from pg_catalog.pg_ts_config
-
-    language_2_cld2_name            VARCHAR(255),       -- second-most likely language name
-    language_2_code                 VARCHAR(255),       -- etc.
-    language_2_script               VARCHAR(255),
-    language_2_percent              SMALLINT,
-    language_2_normalized_score     DOUBLE PRECISION,
-    language_2_ts_name              VARCHAR(255),
-
-    language_3_cld2_name            VARCHAR(255),       -- third-most likely language name
-    language_3_code                 VARCHAR(255),       -- etc.
-    language_3_script               VARCHAR(255),
-    language_3_percent              SMALLINT,
-    language_3_normalized_score     DOUBLE PRECISION,
-    language_3_ts_name              VARCHAR(255)
-
     input_bytes                     INTEGER,            -- length of original text (after conversion to utf8)
     text_bytes                      INTEGER,            -- non-markup bytes
     is_reliable                     BOOLEAN,            -- CLD2's guess
     valid_prefix_bytes              INTEGER,            -- if != input_bytes: invalid UTF8 after that byte
+
+    mll_cld2_name                   VARCHAR(255),       -- first language name, e.g. "ENGLISH" or "NEPALI"
+    mll_language_cname              VARCHAR(255),       -- language name, e.g. "ENGLISH" or "NEPALI" (only minor differences)
+    mll_language_code               VARCHAR(255),       -- language code, e.g. "en" or "ne"
+    mll_script_name                 VARCHAR(255),       -- script name, e.g. "Latin" or "Devanagari"
+    mll_script_code                 VARCHAR(255),       -- script code, e.g. "Latn" or "Deva"
+    mll_ts_name                     VARCHAR(255),       -- guess from pg_catalog.pg_ts_config, e.g. "english" or "nepali"
+
+    language_1_cld2_name            VARCHAR(255),       -- first language name, e.g. "ENGLISH" or "NEPALI"
+    language_1_language_cname       VARCHAR(255),       -- language name, e.g. "ENGLISH" or "NEPALI" (only minor differences)
+    language_1_language_code        VARCHAR(255),       -- language code, e.g. "en" or "ne"
+    language_1_script_name          VARCHAR(255),       -- script name, e.g. "Latin" or "Devanagari"
+    language_1_script_code          VARCHAR(255),       -- script code, e.g. "Latn" or "Deva"
+    language_1_percent              SMALLINT,           -- how likely this language is
+    language_1_normalized_score     DOUBLE PRECISION,   -- mumble mumble
+    language_1_ts_name              VARCHAR(255),       -- guess from pg_catalog.pg_ts_config, e.g. "english" or "nepali"
+
+    language_2_cld2_name            VARCHAR(255),       -- second likely language name
+    language_2_language_cname       VARCHAR(255),       -- etc.
+    language_2_language_code        VARCHAR(255),
+    language_2_script_name          VARCHAR(255),
+    language_2_script_code          VARCHAR(255),
+    language_2_percent              SMALLINT,
+    language_2_normalized_score     DOUBLE PRECISION,
+    language_2_ts_name              VARCHAR(255),
+
+    language_3_cld2_name            VARCHAR(255),       -- third likely language name
+    language_3_language_cname       VARCHAR(255),       -- etc.
+    language_3_language_code        VARCHAR(255),
+    language_3_script_name          VARCHAR(255),
+    language_3_script_code          VARCHAR(255),
+    language_3_percent              SMALLINT,
+    language_3_normalized_score     DOUBLE PRECISION,
+    language_3_ts_name              VARCHAR(255)
 
 );
 

@@ -10,6 +10,9 @@ extern "C" {
 #include "access/tupdesc.h"
 #include "funcapi.h"
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 }
 
 #include <cld2/public/compact_lang_det.h>
@@ -134,50 +137,101 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     // OK, got something to go on
 
     // Define variables for CLD2
-    const char *language_code = "unknown";
 
-    CLD2::Language language3;   // It's magically an array
-    int percent3;
-    double normalized_score3;
+    CLD2::Language language3[3];   // It's magically an array
+    int percent3[3];
+    double normalized_score3[3];
     int text_bytes = 0;
     bool is_reliable = false;
     int valid_prefix_bytes = 0;
     CLD2::ResultChunkVector ResultChunkVector;
 
-    CLD2::Language lang = CLD2::ExtDetectLanguageSummaryCheckUTF8(
+    // most_likely_language is "probably" the same as language3[0]
+    CLD2::Language most_likely_language = CLD2::ExtDetectLanguageSummaryCheckUTF8(
         cld2_input_str_ptr,     // const char* buffer
         cld2_input_str_len,     // int buffer_length
         is_plain_text,          // bool is_plain_text (i.e. not HTML. Unicode OK.)
         &cld2_hints_const,      // hints struct
         cld2_flags,             // might be set with best effort flag
-        &language3,             // CLD2::Language* language3
-        &percent3,              // int* percent3
-        &normalized_score3,     // double* normalized_score3
+        language3,              // CLD2::Language* language3
+        percent3,               // int* percent3
+        normalized_score3,      // double* normalized_score3
         &ResultChunkVector,     // ??
         &text_bytes,            // int* text_bytes - amount of non-markup text parsed
         &is_reliable,           // bool is_reliable
         &valid_prefix_bytes);   // if != cld2_input_str_len, invalid UTF8 after that byte
 
-    char *cld2_language_name[3];
-    cld2_language_name[0] = CLD2::LanguageName( language3[0] );
-    cld2_language_name[1] = CLD2::LanguageName( language3[1] );
-    cld2_language_name[2] = CLD2::LanguageName( language3[2] );
+    const char* cld2_language_name3[] = {
+        CLD2::LanguageName( language3[0] ),
+        CLD2::LanguageName( language3[1] ),
+        CLD2::LanguageName( language3[2] )
+    };
+    const char* mll_cld2_name = CLD2::LanguageName( most_likely_language );
 
-    // use GetULScriptFromName(ulscript) to convert languages to strings
-    CLD2::ULScript ul_script3[3];
-    ul_script3[0] = CLD2::GetULScriptFromName( cld2_language_name[0] );
-    ul_script3[1] = CLD2::GetULScriptFromName( cld2_language_name[1] );
-    ul_script3[2] = CLD2::GetULScriptFromName( cld2_language_name[2] );
+    const char* language_cname3[] = {
+        CLD2::LanguageDeclaredName( language3[0] ),
+        CLD2::LanguageDeclaredName( language3[1] ),
+        CLD2::LanguageDeclaredName( language3[2] )
+    };
+    const char* mll_language_cname = CLD2::LanguageDeclaredName( most_likely_language );
 
-    char *script_code3[3];
-    script_code3[0] = CLD2::ULScriptCode( ul_script3[0] );
-    script_code3[1] = CLD2::ULScriptCode( ul_script3[1] );
-    script_code3[2] = CLD2::ULScriptCode( ul_script3[2] );
+    const char* language_code3[] = {
+        CLD2::LanguageCode( language3[0] ),
+        CLD2::LanguageCode( language3[1] ),
+        CLD2::LanguageCode( language3[2] )
+    };
+    const char* mll_language_code = CLD2::LanguageCode( most_likely_language );
 
+    // SCRIPTS - kind of a hassle
+    // to keep from having a ton of fields, we're just going to concatenate names and codes
 
-    //
-    // also use LanguageCode and LanguageName for each of the three detected languages
-    // (see lang_script.h)
+    // first get the ULScript struct for each Language
+    char *ulscriptname3[3];
+    char *ulscriptcode3[3];
+    for (int i = 0; i <= 2; i++) {   // the three most likely languages
+        ulscriptname3[i] = (char*)malloc(255 * sizeof(char));
+        ulscriptcode3[i] = (char*)malloc(255 * sizeof(char));
+        strcpy(ulscriptname3[i], "");
+        strcpy(ulscriptcode3[i], "");
+        // Each language has up to 4 scripts
+        for (int n = 0; n <= 3; n++) {
+            CLD2::ULScript ulscript = LanguageRecognizedScript( language3[i], n );
+            const char* ulscriptname = ULScriptName(ulscript);
+            if (strcmp(ulscriptname, "None") == 0) {
+                continue;
+            }
+            const char* ulscriptcode  = ULScriptCode(ulscript);
+
+            if (n != 0) {
+                strcat(ulscriptname3[i], ",");
+                strcat(ulscriptcode3[i], ",");
+            }
+
+            strcat(ulscriptname3[i], ulscriptname);
+            strcat(ulscriptcode3[i], ulscriptcode);
+        }
+    }
+    // plus the "most likely language" which is "probably" the same as language3[0]
+    char *mll_ulscriptname = (char*)malloc(255 * sizeof(char));
+    char *mll_ulscriptcode = (char*)malloc(255 * sizeof(char));
+    strcpy(mll_ulscriptname, "");
+    strcpy(mll_ulscriptcode, "");
+    for (int n = 0; n <= 3; n++) {
+        CLD2::ULScript ulscript = LanguageRecognizedScript( most_likely_language, n );
+        const char* ulscriptname = ULScriptName(ulscript);
+        if (strcmp(ulscriptname, "None") == 0) {
+            continue;
+        }
+        const char* ulscriptcode  = ULScriptCode(ulscript);
+
+        if (n != 0) {
+            strcat(mll_ulscriptname, ",");
+            strcat(mll_ulscriptcode, ",");
+        }
+
+        strcat(mll_ulscriptname, ulscriptname);
+        strcat(mll_ulscriptcode, ulscriptcode);
+    }
 
     TupleDesc tuple_desc;
     if (get_call_result_type(fcinfo, NULL, &tuple_desc) != TYPEFUNC_COMPOSITE) {
@@ -186,41 +240,63 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
                  errmsg("called in context that cannot accept type record")));
     }
 
-    Datum values[22];
-    bool nulls[22] = {
+    Datum values[34];
+    bool nulls[34] = {
         false, false, false, false, false,
         false, false, false, false, false,
         false, false, false, false, false,
         false, false, false, false, false,
-        false, false };
+        false, false, false, false, false,
+        false, false, false, false, false,
+        false, false, false, false };
 
-    values[0]  = CStringGetTextDatum( cld2_language_name[0] );              // language_1_cld2_name
-    values[1]  = CStringGetTextDatum( cld2_language_name[0] );              // language_1_code
-    values[2]  = CStringGetTextDatum( script_code3[0] );                    // language_1_script
-    values[3]  = percent3[0];                                               // language_1_percent
-    values[4]  = normalized_score3[0];                                      // language_1_normalized_score
-    values[5]  = NULL;                                                      // language_1_ts_name
+    values[0]  = cld2_input_str_len;                            // input_bytes
+    values[1]  = text_bytes;                                    // text_bytes
+    values[2]  = BoolGetDatum(is_reliable);                     // is_reliable
+    values[3]  = valid_prefix_bytes;                            // valid_prefix_bytes
 
-    values[6]  = CStringGetTextDatum( cld2_language_name[1] );              // language_2_cld2_name
-    values[7]  = CStringGetTextDatum( cld2_language_name[1] );              // language_2_code
-    values[8]  = CStringGetTextDatum( script_code3[1] );                    // language_2_script
-    values[9]  = percent3[1];                                               // language_2_percent
-    values[10] = normalized_score3[1];                                      // language_2_normalized_score
-    values[11] = NULL;                                                      // language_2_ts_name
+    values[4]  = CStringGetTextDatum( mll_cld2_name );          // "most likely language"
+    values[5]  = CStringGetTextDatum( mll_language_cname );     // MLL lang cname
+    values[6]  = CStringGetTextDatum( mll_language_code );      // MLL lang code
+    values[7]  = CStringGetTextDatum( mll_ulscriptname );       // MLL script name
+    values[8]  = CStringGetTextDatum( mll_ulscriptcode );       // MLL script code
+    values[9]  = PointerGetDatum(NULL);                         // MLL ts_name
 
-    values[13] = CStringGetTextDatum( cld2_language_name[2] );              // language_3_cld2_name
-    values[14] = CStringGetTextDatum( cld2_language_name[2] );              // language_3_code
-    values[14] = CStringGetTextDatum( script_code3[2] );                    // language_3_script
-    values[15] = percent3[1];                                               // language_3_percent
-    values[16] = normalized_score3[1];                                      // language_3_normalized_score
-    values[17] = NULL;                                                      // language_3_ts_name
+    values[10] = CStringGetTextDatum( cld2_language_name3[0] ); // language_1_cld2_name
+    values[11] = CStringGetTextDatum( language_cname3[0] );     // language_1_language_cname
+    values[12] = CStringGetTextDatum( language_code3[0] );      // language_1_language_code
+    values[13] = CStringGetTextDatum( ulscriptname3[0] );       // language_1_script_name
+    values[14] = CStringGetTextDatum( ulscriptcode3[0] );       // language_1_script_code
+    values[15] = percent3[0];                                   // language_1_percent
+    values[16] = normalized_score3[0];                          // language_1_normalized_score
+    values[17] = PointerGetDatum(NULL);                         // language_1_ts_name
 
-    values[18] = cld2_input_str_len;                                        // input_bytes
-    values[19] = text_bytes;                                                // text_bytes
-    values[20] = BoolGetDatum(is_reliable);                                 // is_reliable
-    values[21] = valid_prefix_bytes;                                        // valid_prefix_bytes
+    values[18] = CStringGetTextDatum( cld2_language_name3[1] ); // language_2_cld2_name
+    values[19] = CStringGetTextDatum( language_cname3[1] );     // language_2_language_cname
+    values[20] = CStringGetTextDatum( language_code3[1] );      // language_2_language_code
+    values[21] = CStringGetTextDatum( ulscriptname3[1] );       // language_2_script_name
+    values[22] = CStringGetTextDatum( ulscriptcode3[1] );       // language_2_script_code
+    values[23] = percent3[1];                                   // language_2_percent
+    values[24] = normalized_score3[1];                          // language_2_normalized_score
+    values[25] = PointerGetDatum(NULL);                         // language_2_ts_name
+
+    values[26] = CStringGetTextDatum( cld2_language_name3[2] ); // language_3_cld2_name
+    values[27] = CStringGetTextDatum( language_cname3[2] );     // language_3_language_cname
+    values[28] = CStringGetTextDatum( language_code3[2] );      // language_3_language_code
+    values[29] = CStringGetTextDatum( ulscriptname3[2] );       // language_3_script_name
+    values[30] = CStringGetTextDatum( ulscriptcode3[2] );       // language_3_script_code
+    values[31] = percent3[2];                                   // language_3_percent
+    values[32] = normalized_score3[2];                          // language_3_normalized_score
+    values[33] = PointerGetDatum(NULL);                         // language_3_ts_name
 
     HeapTuple tuple = heap_form_tuple(tuple_desc, values, nulls);
+
+    for (int i = 0; i <= 2; i++) {
+        free(ulscriptname3[i]);
+        free(ulscriptcode3[i]);
+    }
+    free(mll_ulscriptname);
+    free(mll_ulscriptcode);
 
     PG_RETURN_DATUM(HeapTupleGetDatum(tuple));
 }
