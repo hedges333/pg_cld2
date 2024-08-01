@@ -158,9 +158,16 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         &is_reliable,           // bool is_reliable
         &valid_prefix_bytes);   // if != cld2_input_str_len, invalid UTF8 after that byte
 
+    char *cld2_language_name[3];
+    cld2_language_name[0] = CLD2::LanguageName( language3[0] );
+    cld2_language_name[1] = CLD2::LanguageName( language3[1] );
+    cld2_language_name[2] = CLD2::LanguageName( language3[2] );
+
     // use GetULScriptFromName(ulscript) to convert languages to strings
-    CLD2::ULScript ul_script3;
-    ul_script3 = CLD2::GetULScriptFromName( language3 );
+    CLD2::ULScript ul_script3[3];
+    ul_script3[0] = CLD2::GetULScriptFromName( cld2_language_name[0] );
+    ul_script3[1] = CLD2::GetULScriptFromName( cld2_language_name[1] );
+    ul_script3[2] = CLD2::GetULScriptFromName( cld2_language_name[2] );
 
     char *script_code3[3];
     script_code3[0] = CLD2::ULScriptCode( ul_script3[0] );
@@ -186,11 +193,6 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         false, false, false, false, false,
         false, false, false, false, false,
         false, false };
-
-    char *cld2_language_name[3];
-    cld2_language_name[0] = CLD2::LanguageName( language3[0] );
-    cld2_language_name[1] = CLD2::LanguageName( language3[1] );
-    cld2_language_name[2] = CLD2::LanguageName( language3[2] );
 
     values[0]  = CStringGetTextDatum( cld2_language_name[0] );              // language_1_cld2_name
     values[1]  = CStringGetTextDatum( cld2_language_name[0] );              // language_1_code
