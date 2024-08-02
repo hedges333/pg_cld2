@@ -11,6 +11,10 @@ PGXS := $(shell $(PG_CONFIG) --pgxs)
 PG_CPPFLAGS = $(shell $(PG_CONFIG) --cppflags)
 PG_LIBS = $(shell $(PG_CONFIG) --libs)
 PG_INCLUDEDIR_SERVER = $(shell $(PG_CONFIG) --includedir-server)
+PG_INCLUDEDIR = $(shell $(PG_CONFIG) --includedir)
+PG_BINDIR = $(shell $(PG_CONFIG) --bindir)
+PG_PKGLIBDIR = $(shell $(PG_CONFIG) --pkglibdir)
+PG_REGRESS = $(PG_PKGLIBDIR)/pgxs/src/test/regress/pg_regress
 include $(PGXS)
 
 # Directories
@@ -29,18 +33,25 @@ DOCS = README.md
 MODULE_big = pg_cld2
 OBJS = $(SRCDIR)/pg_cld2.o
 
+# Compilation and linking flags -
+# necessary for other targets managed by pgxs, not just making .o/.so
+SHLIB_LINK += -L$(PG_PKGLIBDIR) -lcld2
+# must be exported or it doesn't work
+export SHLIB_LINK
+
 # Test settings
-TESTS = $(wildcard test/in/*.sql)
+REGRESS = $(notdir $(basename $(wildcard test/sql/*.sql)))
+#REGRESS = tests-01
 
-REGRESS = $(notdir $(wildcard test/in/*.sql))
-
-REGRESS = pg_regress
-REGRESS_OPTS = --inputdir=test/in --outputdir=test/out
+REGRESS_OPTS = --inputdir=test --outputdir=test
 
 installcheck: all
+	$(MKDIR_P) test/results
 	$(PG_REGRESS) $(REGRESS) $(REGRESS_OPTS)
 
-EXTRA_CLEAN = $(wildcard test/out/*.out) $(MODULE_BIG.so)
+EXTRA_CLEAN = $(wildcard test/out/*.out) \
+			  $(wildcard $(SRCDIR)/*.o) $(wildcard $(SRCDIR)/$.so) \
+			  $(wildcard test/results/*) test/regression.diffs
 
 install: all installdirs install-data install-lib
 
@@ -52,18 +63,21 @@ install-data: installdirs
 	$(INSTALL_DATA) $(DATA) '$(DESTDIR)$(datadir)/extension/'
 
 install-lib: installdirs
-	$(INSTALL_SHLIB) '$(SRCDIR)/$(MODULE_big).so' '$(DESTDIR)$(libdir)/'
+	$(INSTALL_SHLIB) '$(SRCDIR)/$(MODULE_big).so' '$(DESTDIR)$(pkglibdir)/'
 
 # Regression tests
 
 # Clean up build files
+# not sure why EXTRA_CLEAN doesn't work with the default clean target
 clean:
-	$(MAKE) -C $(SRCDIR) clean
-	rm -f $(SRCDIR)/*.o $(SRCDIR)/*.so
+	rm -fv $(EXTRA_CLEAN)
+#$(MAKE) -C $(SRCDIR) clean
+#rm -fv $(SRCDIR)/*.o $(SRCDIR)/*.so
+#rm -rf test/out/* test/results
 
 uninstall:
 	@echo $(DATA_FILENAMES)
-	rm -fv '$(DESTDIR)$(libdir)/$(MODULE_big).so'
+	rm -fv '$(DESTDIR)$(pkglibdir)/$(MODULE_big).so'
 	$(foreach filename, $(DATA_FILENAMES), rm -fv '$(DESTDIR)$(datadir)/extension/$(filename)';)
 
 

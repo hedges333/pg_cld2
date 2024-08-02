@@ -41,20 +41,28 @@ CREATE TYPE pg_cld2_language_detection AS (
 );
 
 CREATE FUNCTION pg_cld2_detect_language_internal(
-    INOUT text
-) RETURNS pg_cld2_language_detection
+    INOUT   result                  pg_cld2_language_detection,
+    INOUT   text_to_analyze         TEXT,
+    IN      is_plain_text           BOOLEAN,
+    IN      content_language_hint   TEXT,
+    IN      tld_hint                TEXT,
+    IN      cld2_language_hint      TEXT,
+    IN      encoding_hint           INTEGER,
+    IN      best_effort             BOOLEAN
+) RETURNS record
 AS 'MODULE_PATHNAME', 'pg_cld2_detect_language_internal'
 LANGUAGE C STRICT;
 
+/*
 
-CREATE FUNCTION pg_cld2_usage()
-    IMMUTABLE STRICT
-    PARALLEL SAFE
-    LANGUAGE plpgsql
+CREATE OR REPLACE FUNCTION pg_cld2_usage()
     RETURNS TEXT
+    -- IMMUTABLE STRICT
+    -- PARALLEL SAFE
+    -- LANGUAGE plpgsql
 AS $$
-BEGIN;
-    RETURN E'usage:\n'
+DECLARE
+    usage := E'usage:\n'
     || E'DECLARE\n'
     || E'  return_record pg_cld2_language_detection;\n'
     || E'BEGIN\n'
@@ -73,8 +81,11 @@ BEGIN;
     || E'  RAISE NOTICE ''language is %%'', return_record.language_1_pg_name;\n'
     || E'  -- See "\d pg_cld2_language_detection" for the return_record field names.'
     ;
+BEGIN
+    RETURN usage
 END;
-$$;
+$$
+
 
 -- NOTE see SELECT pg_encoding_to_char(encoding) AS encoding_name FROM pg_catalog.pg_encoding; for list of PG encodings
 
@@ -83,7 +94,6 @@ $$;
 -- So the caller needs to create an instance of pg_cld2_language_detection ENUM type first,
 -- and pass that as a parameter.
 CREATE FUNCTION pg_cld2_detect_language(
-    INOUT   return_record           pg_cld2_language_detection,     -- For the result values
     INOUT   text_to_analyze         TEXT,                           -- Pass as pointer
     IN      is_plain_text           BOOLEAN DEFAULT TRUE,           -- NULL or TRUE = TRUE; FALSE = FALSE
     IN      content_language_hint   TEXT DEFAULT NULL,
@@ -94,12 +104,14 @@ CREATE FUNCTION pg_cld2_detect_language(
     IN      tsconfig_language_hint  TEXT DEFAULT NULL,
     IN      locale_lang_hint        TEXT DEFAULT NULL
 )
+RETURNS pg_cld2_language_detection
 LANGUAGE plpgsql
 AS
 $$
 DECLARE
     encoding_hint           INTEGER DEFAULT NULL;
     lang_from_locale        VARCHAR(4) DEFAULT NULL;
+    return_record           pg_cld2_language_detection;     -- For the result values
 BEGIN
 
     -- check parameters
@@ -142,15 +154,16 @@ BEGIN
     END IF;
 
     -- return the result of the C call
-    SELECT pg_cld2_detect_language_internal(
+    PERFORM pg_cld2_detect_language_internal(
         text_to_analyze,        -- text
+        return_record,
         is_plain_text,          -- boolean
         content_language_hint,  -- text
         tld_hint,               -- text
         cld2_language_hint,     -- text
         encoding_hint,          -- int
         best_effort             -- boolean
-    ) INTO return_record;
+    );
         -- return_record.language_1_cld2_name,
         -- return_record.language_1_code,
         -- return_record.language_1_script,
@@ -203,7 +216,7 @@ BEGIN
         return_record.language_3_ts_name = 'simple';
     END IF;
 
-    RETURN;
+    RETURN return_record;
 END;
 $$;
 
@@ -294,3 +307,5 @@ INSERT INTO pg_cld2_encodings VALUES
 
 -- allow dumping and changing the encodings table
 SELECT pg_catalog.pg_extension_config_dump('pg_cld2_encodings', '');
+
+*/

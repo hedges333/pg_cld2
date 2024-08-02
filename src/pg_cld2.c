@@ -7,20 +7,24 @@ extern "C" {
 #include "catalog/pg_type.h"
 #include "access/htup_details.h"
 #include "utils/lsyscache.h"
+#include "access/detoast.h"
 #include "access/tupdesc.h"
 #include "funcapi.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if PG_VERSION_NUM >= 160000
+#include "varatt.h"
+#endif
 }
 
 #include <cld2/public/compact_lang_det.h>
 #include <cld2/public/encodings.h>
 
-#ifdef PG_MODULE_MAGIC
+// #ifdef PG_MODULE_MAGIC
 PG_MODULE_MAGIC;
-#endif
+// #endif
 
 PG_FUNCTION_INFO_V1(pg_cld2_detect_language_internal);
 
