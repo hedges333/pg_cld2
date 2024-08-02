@@ -50,8 +50,9 @@ installcheck: all
 	$(PG_REGRESS) $(REGRESS) $(REGRESS_OPTS)
 
 EXTRA_CLEAN = $(wildcard test/out/*.out) \
+			  $(wildcard test/results/*) test/regression.diffs \
 			  $(wildcard $(SRCDIR)/*.o) $(wildcard $(SRCDIR)/$.so) \
-			  $(wildcard test/results/*) test/regression.diffs
+			  $(wildcard $(SRCDIR)/*.bc)
 
 install: all installdirs install-data install-lib
 

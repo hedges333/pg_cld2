@@ -4,6 +4,7 @@ extern "C" {
 #include "utils/typcache.h"
 #include "executor/spi.h"
 #include "utils/builtins.h"
+#include "utils/elog.h"
 #include "catalog/pg_type.h"
 #include "access/htup_details.h"
 #include "utils/lsyscache.h"
@@ -17,16 +18,15 @@ extern "C" {
 #if PG_VERSION_NUM >= 160000
 #include "varatt.h"
 #endif
+#ifdef PG_MODULE_MAGIC
+PG_MODULE_MAGIC;
+#endif
+
+PG_FUNCTION_INFO_V1(pg_cld2_detect_language_internal);
 }
 
 #include <cld2/public/compact_lang_det.h>
 #include <cld2/public/encodings.h>
-
-// #ifdef PG_MODULE_MAGIC
-PG_MODULE_MAGIC;
-// #endif
-
-PG_FUNCTION_INFO_V1(pg_cld2_detect_language_internal);
 
 Datum
 pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
