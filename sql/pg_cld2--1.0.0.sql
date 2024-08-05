@@ -3,6 +3,7 @@ CREATE TYPE pg_cld2_language_detection AS (
     text_bytes                      INTEGER,            -- non-markup bytes
     is_reliable                     BOOLEAN,            -- CLD2's guess
     valid_prefix_bytes              INTEGER,            -- if != input_bytes: invalid UTF8 after that byte
+    valid_utf8                      BOOLEAN,            -- short answer whether there are invalid utf8 bytes
 
     mll_cld2_name                   VARCHAR(255),       -- first language name, e.g. "ENGLISH" or "NEPALI"
     mll_language_cname              VARCHAR(255),       -- language name, e.g. "ENGLISH" or "NEPALI" (only minor differences)
@@ -41,7 +42,7 @@ CREATE TYPE pg_cld2_language_detection AS (
 );
 
 CREATE FUNCTION pg_cld2_detect_language_internal(
-    INOUT   result                  pg_cld2_language_detection,
+    INOUT   result_record           pg_cld2_language_detection,
     INOUT   text_to_analyze         TEXT,
     IN      is_plain_text           BOOLEAN,
     IN      content_language_hint   TEXT,
@@ -49,17 +50,15 @@ CREATE FUNCTION pg_cld2_detect_language_internal(
     IN      cld2_language_hint      TEXT,
     IN      encoding_hint           INTEGER,
     IN      best_effort             BOOLEAN
-) RETURNS record
+) RETURNS RECORD
 AS 'MODULE_PATHNAME', 'pg_cld2_detect_language_internal'
 LANGUAGE C STRICT;
 
-/*
-
 CREATE OR REPLACE FUNCTION pg_cld2_usage()
     RETURNS TEXT
-    -- IMMUTABLE STRICT
-    -- PARALLEL SAFE
-    -- LANGUAGE plpgsql
+    IMMUTABLE STRICT
+    PARALLEL SAFE
+    LANGUAGE plpgsql
 AS $$
 DECLARE
     usage := E'usage:\n'
@@ -84,16 +83,19 @@ DECLARE
 BEGIN
     RETURN usage
 END;
-$$
-
+$$;
 
 -- NOTE see SELECT pg_encoding_to_char(encoding) AS encoding_name FROM pg_catalog.pg_encoding; for list of PG encodings
 
 -- To avoid copying a giant string of text to analyze, it is passed as an INOUT param.
--- That means it cannot have a return value.
+-- Postgres forces a function to return the type of the first INOUT param.
+-- So, pass NULL or an empty pg_cld2_language_detection record as the first param.
+-- If you pass a record, it will be populated, and you can ignore the return value.
+-- Or you can SELECT INTO the same or another record.  Up to you.  YMMV.
 -- So the caller needs to create an instance of pg_cld2_language_detection ENUM type first,
 -- and pass that as a parameter.
 CREATE FUNCTION pg_cld2_detect_language(
+    INOUT   result_record           pg_cld2_language_detection,     -- you can pass NULL or a dummy record
     INOUT   text_to_analyze         TEXT,                           -- Pass as pointer
     IN      is_plain_text           BOOLEAN DEFAULT TRUE,           -- NULL or TRUE = TRUE; FALSE = FALSE
     IN      content_language_hint   TEXT DEFAULT NULL,
@@ -104,19 +106,17 @@ CREATE FUNCTION pg_cld2_detect_language(
     IN      tsconfig_language_hint  TEXT DEFAULT NULL,
     IN      locale_lang_hint        TEXT DEFAULT NULL
 )
-RETURNS pg_cld2_language_detection
+RETURNS RECORD
 LANGUAGE plpgsql
 AS
 $$
 DECLARE
     encoding_hint           INTEGER DEFAULT NULL;
     lang_from_locale        VARCHAR(4) DEFAULT NULL;
-    return_record           pg_cld2_language_detection;     -- For the result values
 BEGIN
 
     -- check parameters
     IF text_to_analyze  IS NULL
-    OR return_record    IS NULL
     THEN
         RAISE EXCEPTION pg_cld2_usage();
     END IF;
@@ -154,72 +154,60 @@ BEGIN
     END IF;
 
     -- return the result of the C call
-    PERFORM pg_cld2_detect_language_internal(
+    SELECT pg_cld2_detect_language_internal(
+        result_record,
         text_to_analyze,        -- text
-        return_record,
         is_plain_text,          -- boolean
         content_language_hint,  -- text
         tld_hint,               -- text
         cld2_language_hint,     -- text
         encoding_hint,          -- int
         best_effort             -- boolean
-    );
-        -- return_record.language_1_cld2_name,
-        -- return_record.language_1_code,
-        -- return_record.language_1_script,
-        -- return_record.language_1_percent,
-        -- return_record.language_1_normalized_score,
-        -- return_record.language_2_cld2_name,
-        -- return_record.language_2_code,
-        -- return_record.language_2_script,
-        -- return_record.language_2_percent,
-        -- return_record.language_2_normalized_score,
-        -- return_record.language_3_cld2_name,
-        -- return_record.language_3_code,
-        -- return_record.language_3_script,
-        -- return_record.language_3_percent,
-        -- return_record.language_3_normalized_score,
-        -- return_record.text_bytes,
-        -- return_record.is_reliable,
-        -- return_record.valid_prefix_bytes;
+    ) INTO result_record;
 
     -- now figure out the language pg_name's from the cld2 name or code
     SELECT cfgname
-        INTO return_record.mll_ts_name
+        INTO result_record.mll_ts_name
         FROM    pg_catalog.pg_ts_config
-        WHERE   cfgname = LOWER( return_record.mll_cld2_name );
+        WHERE   cfgname = LOWER( result_record.mll_cld2_name );
     IF NOT FOUND THEN
-        return_record.mll_ts_name = 'simple';
+        result_record.mll_ts_name = 'simple';
     END IF;
 
     SELECT cfgname
-        INTO    return_record.language_1_ts_name
+        INTO    result_record.language_1_ts_name
         FROM    pg_catalog.pg_ts_config
-        WHERE   cfgname = LOWER( return_record.language_1_cld2_name );
+        WHERE   cfgname = LOWER( result_record.language_1_cld2_name );
     IF NOT FOUND THEN
-        return_record.language_1_ts_name = 'simple';
+        result_record.language_1_ts_name = 'simple';
     END IF;
 
     SELECT cfgname
-        INTO    return_record.language_2_ts_name
+        INTO    result_record.language_2_ts_name
         FROM    pg_catalog.pg_ts_config
-        WHERE   cfgname = LOWER( return_record.language_2_cld2_name );
+        WHERE   cfgname = LOWER( result_record.language_2_cld2_name );
     IF NOT FOUND THEN
-        return_record.language_2_ts_name = 'simple';
+        result_record.language_2_ts_name = 'simple';
     END IF;
 
     SELECT cfgname
-        INTO    return_record.language_3_ts_name
+        INTO    result_record.language_3_ts_name
         FROM    pg_catalog.pg_ts_config
-        WHERE   cfgname = LOWER( return_record.language_3_cld2_name );
+        WHERE   cfgname = LOWER( result_record.language_3_cld2_name );
     IF NOT FOUND THEN
-        return_record.language_3_ts_name = 'simple';
+        result_record.language_3_ts_name = 'simple';
     END IF;
 
-    RETURN return_record;
+    IF result_record.text_bytes == result_record.valid_prefix_bytes THEN
+        result_record.valid_utf8 := TRUE;
+    ELSE
+        result_record.valid_utf8 := FALSE;
+    END IF;
+
+
+    RETURN result_record;
 END;
 $$;
-
 
 CREATE TABLE IF NOT EXISTS pg_cld2_encodings (
     cld2_encoding_name  VARCHAR(32)         NOT NULL,
@@ -307,5 +295,3 @@ INSERT INTO pg_cld2_encodings VALUES
 
 -- allow dumping and changing the encodings table
 SELECT pg_catalog.pg_extension_config_dump('pg_cld2_encodings', '');
-
-*/

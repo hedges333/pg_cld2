@@ -33,20 +33,8 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
 {
     // let's make the parameters and return values full-featured
 
-    // The first parameter gets ignored,
-    // because it's easier to create a new one and return it.
-    // (The memory management for different field types is a pain.)
-    // Postgres expects the return type of a function with INOUT parameters
-    // to be the type of the first parameter.
-    // We want to pass the input_text as INOUT
-    // so it doesn't get copied and we can access it by reference,
-    // in case it is a very large piece of text.
-    // The wrapper function declares the record first,
-    // passes it as the parameter to force the return type to record,
-    // then overwrites it with the return value.
-
-    // 0:   return_record           pg_cld2_language_detection (ignored)
-    // 1:   input_text              TEXT        The text to be examined.
+    // 0:   result_record           pg_cld2_language_detection (custom type) (required)
+    // 1:   input_text              TEXT        The text to be examined. (required)
     // 2:   is_plain_text           BOOLEAN     Or decode HTML (and MD?) if false.
     // 3:   content_language_hint   TEXT        "mi,en" boosts Maori and English
     // 4:   tld_hint                TEXT        "id" boosts Indonesian
@@ -54,18 +42,52 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     // 6:   encoding_hint           INTEGER     SJS boosts Japanese
     // 7:   best_effort             BOOLEAN     Whether to set kCLDFlagBestEffort
 
-    // 1:   input_text              TEXT        The text to be examined.
-    if (PG_ARGISNULL(1)) {
+    /*
+    // bail if required parameters are not present
+    if (PG_ARGISNULL(0) || PG_ARGISNULL(1)) {
+        elog(ERROR, "usage: pg_cld2_detect_language_internal(result_record (required), input_text (required), ...)");
         PG_RETURN_NULL();
     }
 
-    // Get the text parameter as a PG Datum
+    // 0:   result_record           pg_cld2_language_detection (custom type)
+    // OK, here's the real trick.  Take this as an INOUT parameter so we can
+    // access it as a pointer and set the values within this routine.
+    HeapTupleHeader rec_header = PG_GETARG_HEAPTUPLEHEADER(0);
+
+    // obtain tuple descriptor for the custom type
+    Oid rec_type_oid = HeapTupleHeaderGetTypeId(rec_header);
+    int32 rec_typmod = HeapTupleHeaderGetTypeMod(rec_header);
+    TupleDesc rec_tupdesc = lookup_rowtype_tupdesc(rec_type_oid, rec_typmod);
+
+    // initialize HeapTupleData
+    HeapTupleData rec_data;
+    rec_data.t_len = HeapTupleHeaderGetDatumLength(rec_header);
+    ItemPointerSetInvalid(&(rec_data.t_self));
+    rec_data.t_tableOid = InvalidOid;
+    rec_data.t_data = rec_header;
+
+    */
+
+    // check caller context to make sure it expects a record
+    if (get_call_result_type(fcinfo, NULL, &rec_tupdesc) != TYPEFUNC_COMPOSITE) {
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("called in context that cannot accept type record")));
+    }
+
+    // now it should be set up for use after computing the answers
+
+    // 1:   input_text              TEXT        The text to be examined.
+    // This is also sent as an INOUT parameter so we can get it as a reference
+    // instead of copying a potentially large block of text. (I think... in theory.)
+    // Get the text parameter as a PG Datum pointer:
     text *pg_input_text = PG_GETARG_TEXT_PP(1);
 
     // Get the cstring pointer to the actual string data without copying it (noice!)
     char *cld2_input_str_ptr = VARDATA_ANY(pg_input_text);
 
-    // Get the length of the string data
+    // Get the length of the string data from the postgres method
+    // Should we verify this is the same as the strlen of the char* content?
     int cld2_input_str_len = VARSIZE_ANY_EXHDR(pg_input_text);
 
     // 2:   is_plain_text           BOOLEAN     Or decode HTML (and MD?) if false.
@@ -111,7 +133,6 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         cld2_hints.encoding_hint = PG_GETARG_UINT16(6);
     }
 
-    // the function expects the hints struct parameter to be const
     const CLD2::CLDHints cld2_hints_const = {
         .content_language_hint  = cld2_hints.content_language_hint,
         .tld_hint               = cld2_hints.tld_hint,
@@ -135,7 +156,7 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
 
     // Use the one that says "Use this one." in the documentation in compact_lang_det.h.
     // (ExtDetectLanguageSummaryCheckUTF8)
-    // Make an attempt to return all the data in a record.
+    // Make an attempt to set all the data in the record pointer.
     //
     // inputs:
     // const char* buffer                       the input string
@@ -250,60 +271,55 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         strcat(mll_ulscriptcode, ulscriptcode);
     }
 
-    TupleDesc tuple_desc;
-    if (get_call_result_type(fcinfo, NULL, &tuple_desc) != TYPEFUNC_COMPOSITE) {
-        ereport(ERROR,
-                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                 errmsg("called in context that cannot accept type record")));
-    }
-
-    Datum values[35];
-    bool nulls[35] = {
-        false, false, false, false, true,
-        false, false, false, false, false, true,
-        false, false, false, false, false, false, false, true,
-        false, false, false, false, false, false, false, true,
-        false, false, false, false, false, false, false, true };
+    // OK, ready to send back the answers
+    Datum values[34];
+    bool nulls[34] = {
+        false, false, false, false, false,
+        false, false, false, false, false,
+        false, false, false, false, false,
+        false, false, false, false, false,
+        false, false, false, false, false,
+        false, false, false, false, false,
+        false, false, false, false };
 
     values[0]  = cld2_input_str_len;                            // input_bytes
     values[1]  = text_bytes;                                    // text_bytes
     values[2]  = BoolGetDatum(is_reliable);                     // is_reliable
     values[3]  = valid_prefix_bytes;                            // valid_prefix_bytes
-    values[4]  = PointerGetDatum(NULL);                         // valid_prefix_bytes
 
-    values[5]  = CStringGetTextDatum( mll_cld2_name );          // "most likely language"
-    values[6]  = CStringGetTextDatum( mll_language_cname );     // MLL lang cname
-    values[7]  = CStringGetTextDatum( mll_language_code );      // MLL lang code
-    values[8]  = CStringGetTextDatum( mll_ulscriptname );       // MLL script name
-    values[9]  = CStringGetTextDatum( mll_ulscriptcode );       // MLL script code
-    values[10] = PointerGetDatum(NULL);                         // MLL ts_name
+    values[4]  = CStringGetTextDatum( mll_cld2_name );          // "most likely language"
+    values[5]  = CStringGetTextDatum( mll_language_cname );     // MLL lang cname
+    values[6]  = CStringGetTextDatum( mll_language_code );      // MLL lang code
+    values[7]  = CStringGetTextDatum( mll_ulscriptname );       // MLL script name
+    values[8]  = CStringGetTextDatum( mll_ulscriptcode );       // MLL script code
+    values[9]  = PointerGetDatum(NULL);                         // MLL ts_name
 
-    values[11] = CStringGetTextDatum( cld2_language_name3[0] ); // language_1_cld2_name
-    values[12] = CStringGetTextDatum( language_cname3[0] );     // language_1_language_cname
-    values[13] = CStringGetTextDatum( language_code3[0] );      // language_1_language_code
-    values[14] = CStringGetTextDatum( ulscriptname3[0] );       // language_1_script_name
-    values[15] = CStringGetTextDatum( ulscriptcode3[0] );       // language_1_script_code
-    values[16] = percent3[0];                                   // language_1_percent
-    values[17] = normalized_score3[0];                          // language_1_normalized_score
-    values[18] = PointerGetDatum(NULL);                         // language_1_ts_name
+    values[10] = CStringGetTextDatum( cld2_language_name3[0] ); // language_1_cld2_name
+    values[11] = CStringGetTextDatum( language_cname3[0] );     // language_1_language_cname
+    values[12] = CStringGetTextDatum( language_code3[0] );      // language_1_language_code
+    values[13] = CStringGetTextDatum( ulscriptname3[0] );       // language_1_script_name
+    values[14] = CStringGetTextDatum( ulscriptcode3[0] );       // language_1_script_code
+    values[15] = percent3[0];                                   // language_1_percent
+    values[16] = normalized_score3[0];                          // language_1_normalized_score
+    values[17] = PointerGetDatum(NULL);                         // language_1_ts_name
 
-    values[19] = CStringGetTextDatum( cld2_language_name3[1] ); // language_2_cld2_name
-    values[20] = CStringGetTextDatum( language_cname3[1] );     // language_2_language_cname
-    values[21] = CStringGetTextDatum( language_code3[1] );      // language_2_language_code
-    values[22] = CStringGetTextDatum( ulscriptname3[1] );       // language_2_script_name
-    values[23] = CStringGetTextDatum( ulscriptcode3[1] );       // language_2_script_code
-    values[24] = percent3[1];                                   // language_2_percent
-    values[25] = normalized_score3[1];                          // language_2_normalized_score
-    values[26] = PointerGetDatum(NULL);                         // language_2_ts_name
+    values[18] = CStringGetTextDatum( cld2_language_name3[1] ); // language_2_cld2_name
+    values[19] = CStringGetTextDatum( language_cname3[1] );     // language_2_language_cname
+    values[20] = CStringGetTextDatum( language_code3[1] );      // language_2_language_code
+    values[21] = CStringGetTextDatum( ulscriptname3[1] );       // language_2_script_name
+    values[22] = CStringGetTextDatum( ulscriptcode3[1] );       // language_2_script_code
+    values[23] = percent3[1];                                   // language_2_percent
+    values[24] = normalized_score3[1];                          // language_2_normalized_score
+    values[25] = PointerGetDatum(NULL);                         // language_2_ts_name
 
-    values[27] = CStringGetTextDatum( cld2_language_name3[2] ); // language_3_cld2_name
-    values[28] = CStringGetTextDatum( language_cname3[2] );     // language_3_language_cname
-    values[29] = CStringGetTextDatum( language_code3[2] );      // language_3_language_code
-    values[30] = CStringGetTextDatum( ulscriptname3[2] );       // language_3_script_name
-    values[31] = CStringGetTextDatum( ulscriptcode3[2] );       // language_3_script_code
-    values[32] = percent3[2];                                   // language_3_percent
-    values[33] = normalized_score3[2];                          // language_3_normalized_score
-    values[34] = PointerGetDatum(NULL);                         // language_3_ts_name
+    values[26] = CStringGetTextDatum( cld2_language_name3[2] ); // language_3_cld2_name
+    values[27] = CStringGetTextDatum( language_cname3[2] );     // language_3_language_cname
+    values[28] = CStringGetTextDatum( language_code3[2] );      // language_3_language_code
+    values[29] = CStringGetTextDatum( ulscriptname3[2] );       // language_3_script_name
+    values[30] = CStringGetTextDatum( ulscriptcode3[2] );       // language_3_script_code
+    values[31] = percent3[2];                                   // language_3_percent
+    values[32] = normalized_score3[2];                          // language_3_normalized_score
+    values[33] = PointerGetDatum(NULL);                         // language_3_ts_name
 
     HeapTuple tuple = heap_form_tuple(tuple_desc, values, nulls);
 
