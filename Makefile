@@ -44,14 +44,15 @@ REGRESS = $(notdir $(basename $(wildcard test/sql/*.sql)))
 #REGRESS = tests-01
 
 REGRESS_OPTS = --inputdir=test --outputdir=test
+TESTDIR_ABS := $(shell pwd)/test
 
 installcheck: all
 	$(MKDIR_P) test/results
-	$(PG_REGRESS) $(REGRESS) $(REGRESS_OPTS)
+	TESTDIR_ABS=$(TESTDIR_ABS) $(PG_REGRESS) $(REGRESS) $(REGRESS_OPTS)
 
 EXTRA_CLEAN = $(wildcard test/out/*.out) \
 			  $(wildcard test/results/*) test/regression.diffs \
-			  $(wildcard $(SRCDIR)/*.o) $(wildcard $(SRCDIR)/$.so) \
+			  $(wildcard $(SRCDIR)/*.o) $(wildcard $(SRCDIR)/*.so) \
 			  $(wildcard $(SRCDIR)/*.bc)
 
 install: all installdirs install-data install-lib
@@ -70,8 +71,10 @@ install-lib: installdirs
 
 # Clean up build files
 # not sure why EXTRA_CLEAN doesn't work with the default clean target
+
 clean:
 	rm -fv $(EXTRA_CLEAN)
+
 #$(MAKE) -C $(SRCDIR) clean
 #rm -fv $(SRCDIR)/*.o $(SRCDIR)/*.so
 #rm -rf test/out/* test/results

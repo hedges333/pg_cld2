@@ -31,47 +31,51 @@ PG_FUNCTION_INFO_V1(pg_cld2_detect_language_internal);
 Datum
 pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
 {
+
+    // make sure this is called in a context that accepts a record return type
+    TupleDesc tuple_desc;
+    if (get_call_result_type(fcinfo, NULL, &tuple_desc) != TYPEFUNC_COMPOSITE) {
+        ereport(ERROR,
+                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+                 errmsg("called in context that cannot accept type record")));
+    }
+
     // let's make the parameters and return values full-featured
 
-    // The first parameter gets ignored,
-    // because it's easier to create a new one and return it.
-    // (The memory management for different field types is a pain.)
-    // Postgres expects the return type of a function with INOUT parameters
-    // to be the type of the first parameter.
-    // We want to pass the input_text as INOUT
-    // so it doesn't get copied and we can access it by reference,
-    // in case it is a very large piece of text.
-    // The wrapper function declares the record first,
-    // passes it as the parameter to force the return type to record,
-    // then overwrites it with the return value.
+    // 0:   input_text              TEXT        The text to be examined.
+    // 1:   is_plain_text           BOOLEAN     Or decode HTML (and MD?) if false.
+    // 2:   content_language_hint   TEXT        "mi,en" boosts Maori and English
+    // 3:   tld_hint                TEXT        "id" boosts Indonesian
+    // 4:   language_hint           TEXT        "ITALIAN" boosts it
+    // 5:   encoding_hint           INTEGER     SJS boosts Japanese
+    // 6:   best_effort             BOOLEAN     Whether to set kCLDFlagBestEffort
 
-    // 0:   return_record           pg_cld2_language_detection (ignored)
-    // 1:   input_text              TEXT        The text to be examined.
-    // 2:   is_plain_text           BOOLEAN     Or decode HTML (and MD?) if false.
-    // 3:   content_language_hint   TEXT        "mi,en" boosts Maori and English
-    // 4:   tld_hint                TEXT        "id" boosts Indonesian
-    // 5:   language_hint           TEXT        "ITALIAN" boosts it
-    // 6:   encoding_hint           INTEGER     SJS boosts Japanese
-    // 7:   best_effort             BOOLEAN     Whether to set kCLDFlagBestEffort
-
-    // 1:   input_text              TEXT        The text to be examined.
-    if (PG_ARGISNULL(1)) {
-        PG_RETURN_NULL();
+    /* **** */
+    // 0:   input_text              TEXT        The text to be examined.
+    if (PG_ARGISNULL(0)) {
+        ereport(ERROR,
+            (   errcode(ERRCODE_NULL_VALUE_NOT_ALLOWED),
+                errmsg("input_text parameter required")
+            )
+        );
     }
 
     // Get the text parameter as a PG Datum
-    text *pg_input_text = PG_GETARG_TEXT_PP(1);
+    text *pg_input_text = PG_GETARG_TEXT_PP(0);
 
     // Get the cstring pointer to the actual string data without copying it (noice!)
+    // Well, *probably* noice, if PG figures out that we're not changing it,
+    // but even an INOUT parameter might be copied internally, so it might be a copy anyway.
     char *cld2_input_str_ptr = VARDATA_ANY(pg_input_text);
 
     // Get the length of the string data
     int cld2_input_str_len = VARSIZE_ANY_EXHDR(pg_input_text);
 
-    // 2:   is_plain_text           BOOLEAN     Or decode HTML (and MD?) if false.
+    /* **** */
+    // 1:   is_plain_text           BOOLEAN     Or decode HTML (and MD?) if false.
     bool is_plain_text = true;
-    if (!PG_ARGISNULL(2)) {
-        is_plain_text = PG_GETARG_BOOL(2);
+    if (!PG_ARGISNULL(1)) {
+        is_plain_text = PG_GETARG_BOOL(1);
     }
 
     // several parameters get crammed into hints struct
@@ -81,34 +85,38 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     cld2_hints.encoding_hint = CLD2::UTF8;
     cld2_hints.language_hint = CLD2::UNKNOWN_LANGUAGE;
 
-    // 3:   content_language_hint   TEXT        "mi,en" boosts Maori and English
+    /* **** */
+    // 2:   content_language_hint   TEXT        "mi,en" boosts Maori and English
     text *content_language_hint = NULL;
-    if (!PG_ARGISNULL(3)) {
-        content_language_hint = PG_GETARG_TEXT_PP(3);
+    if (!PG_ARGISNULL(2)) {
+        content_language_hint = PG_GETARG_TEXT_PP(2);
         cld2_hints.content_language_hint = text_to_cstring(content_language_hint);
     }
 
-    // 4:   tld_hint                TEXT        "id" boosts Indonesian
+    /* **** */
+    // 3:   tld_hint                TEXT        "id" boosts Indonesian
     text *tld_hint = NULL;
-    if (!PG_ARGISNULL(4)) {
-        tld_hint = PG_GETARG_TEXT_PP(4);
+    if (!PG_ARGISNULL(3)) {
+        tld_hint = PG_GETARG_TEXT_PP(3);
         cld2_hints.tld_hint = text_to_cstring(tld_hint);
     }
 
-    // 5:   language_hint           TEXT        "ITALIAN" boosts it
+    /* **** */
+    // 4:   language_hint           TEXT        "ITALIAN" boosts it
     text *language_hint = NULL;
-    if (!PG_ARGISNULL(5)) {
-        language_hint = PG_GETARG_TEXT_PP(5);
+    if (!PG_ARGISNULL(4)) {
+        language_hint = PG_GETARG_TEXT_PP(4);
         const char *language_hint_cstr_const = text_to_cstring(language_hint);
         cld2_hints.language_hint = CLD2::GetLanguageFromName( language_hint_cstr_const );
     }
 
-    // 6:   encoding_hint           INTEGER     SJS boosts Japanese
+    /* **** */
+    // 5:   encoding_hint           INTEGER     SJS boosts Japanese
     // The PL/pgsql wrapper function will always send Unicode, but this will be passed
     // if the source text was encoded differently and was specified as such, to give
     // CLD2 a hint about what language it might be.
-    if (!PG_ARGISNULL(6)) {
-        cld2_hints.encoding_hint = PG_GETARG_UINT16(6);
+    if (!PG_ARGISNULL(5)) {
+        cld2_hints.encoding_hint = PG_GETARG_UINT16(5);
     }
 
     // the function expects the hints struct parameter to be const
@@ -119,15 +127,16 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         .language_hint          = cld2_hints.language_hint
     };
 
-    // 7:   best_effort             BOOLEAN     Whether to set kCLDFlagBestEffort
+    /* **** */
+    // 6:   best_effort             BOOLEAN     Whether to set kCLDFlagBestEffort
     //      flags                   INTEGER
     // This is mostly for debugging.  However, we set it with kCLDFlagBestEffort if not de-requested
     // to always get a result, even for short input text, instead of sending "UNKNOWN".
     // Since it's UTF8 input, it might at least be able to detect from the character set.
     int cld2_flags = 0;
     bool best_effort = true;
-    if (!PG_ARGISNULL(7)) {
-        best_effort = PG_GETARG_BOOL(7);
+    if (!PG_ARGISNULL(6)) {
+        best_effort = PG_GETARG_BOOL(6);
     }
     if (best_effort) {
         cld2_flags |= CLD2::kCLDFlagBestEffort;
@@ -177,6 +186,8 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         &text_bytes,            // int* text_bytes - amount of non-markup text parsed
         &is_reliable,           // bool is_reliable
         &valid_prefix_bytes);   // if != cld2_input_str_len, invalid UTF8 after that byte
+
+    bool is_valid_utf8 = (cld2_input_str_len == valid_prefix_bytes);
 
     const char* cld2_language_name3[] = {
         CLD2::LanguageName( language3[0] ),
@@ -250,16 +261,13 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         strcat(mll_ulscriptcode, ulscriptcode);
     }
 
-    TupleDesc tuple_desc;
-    if (get_call_result_type(fcinfo, NULL, &tuple_desc) != TYPEFUNC_COMPOSITE) {
-        ereport(ERROR,
-                (errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
-                 errmsg("called in context that cannot accept type record")));
-    }
-
+    // set up the array of values that we'll return as the custom type record
     Datum values[35];
+
+    // this tells whether the values below will be returned as NULL.
+    // we leave a few for the wrapper function to figure out.
     bool nulls[35] = {
-        false, false, false, false, true,
+        false, false, false, false, false,
         false, false, false, false, false, true,
         false, false, false, false, false, false, false, true,
         false, false, false, false, false, false, false, true,
@@ -269,7 +277,7 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     values[1]  = text_bytes;                                    // text_bytes
     values[2]  = BoolGetDatum(is_reliable);                     // is_reliable
     values[3]  = valid_prefix_bytes;                            // valid_prefix_bytes
-    values[4]  = PointerGetDatum(NULL);                         // valid_prefix_bytes
+    values[4]  = BoolGetDatum(is_valid_utf8);                   // is_valid_utf8
 
     values[5]  = CStringGetTextDatum( mll_cld2_name );          // "most likely language"
     values[6]  = CStringGetTextDatum( mll_language_cname );     // MLL lang cname

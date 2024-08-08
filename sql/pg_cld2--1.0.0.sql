@@ -3,47 +3,46 @@ CREATE TYPE pg_cld2_language_detection AS (
     text_bytes                      INTEGER,            -- non-markup bytes
     is_reliable                     BOOLEAN,            -- CLD2's guess
     valid_prefix_bytes              INTEGER,            -- if != input_bytes: invalid UTF8 after that byte
-    valid_utf8                      BOOLEAN,            -- short answer whether there are invalid utf8 bytes
+    is_valid_utf8                   BOOLEAN,            -- short answer whether there are invalid utf8 bytes
 
-    mll_cld2_name                   VARCHAR(255),       -- first language name, e.g. "ENGLISH" or "NEPALI"
-    mll_language_cname              VARCHAR(255),       -- language name, e.g. "ENGLISH" or "NEPALI" (only minor differences)
-    mll_language_code               VARCHAR(255),       -- language code, e.g. "en" or "ne"
-    mll_script_name                 VARCHAR(255),       -- script name, e.g. "Latin" or "Devanagari"
-    mll_script_code                 VARCHAR(255),       -- script code, e.g. "Latn" or "Deva"
-    mll_ts_name                     VARCHAR(255),       -- guess from pg_catalog.pg_ts_config, e.g. "english" or "nepali"
+    mll_cld2_name                   TEXT,       -- first language name, e.g. "ENGLISH" or "NEPALI"
+    mll_language_cname              TEXT,       -- language name, e.g. "ENGLISH" or "NEPALI" (only minor differences)
+    mll_language_code               TEXT,       -- language code, e.g. "en" or "ne"
+    mll_script_name                 TEXT,       -- script name, e.g. "Latin" or "Devanagari"
+    mll_script_code                 TEXT,       -- script code, e.g. "Latn" or "Deva"
+    mll_ts_name                     TEXT,       -- guess from pg_catalog.pg_ts_config, e.g. "english" or "nepali"
 
-    language_1_cld2_name            VARCHAR(255),       -- first language name, e.g. "ENGLISH" or "NEPALI"
-    language_1_language_cname       VARCHAR(255),       -- language name, e.g. "ENGLISH" or "NEPALI" (only minor differences)
-    language_1_language_code        VARCHAR(255),       -- language code, e.g. "en" or "ne"
-    language_1_script_name          VARCHAR(255),       -- script name, e.g. "Latin" or "Devanagari"
-    language_1_script_code          VARCHAR(255),       -- script code, e.g. "Latn" or "Deva"
-    language_1_percent              SMALLINT,           -- how likely this language is
+    language_1_cld2_name            TEXT,       -- first language name, e.g. "ENGLISH" or "NEPALI"
+    language_1_language_cname       TEXT,       -- language name, e.g. "ENGLISH" or "NEPALI" (only minor differences)
+    language_1_language_code        TEXT,       -- language code, e.g. "en" or "ne"
+    language_1_script_name          TEXT,       -- script name, e.g. "Latin" or "Devanagari"
+    language_1_script_code          TEXT,       -- script code, e.g. "Latn" or "Deva"
+    language_1_percent              INTEGER,            -- how likely this language is
     language_1_normalized_score     DOUBLE PRECISION,   -- mumble mumble
-    language_1_ts_name              VARCHAR(255),       -- guess from pg_catalog.pg_ts_config, e.g. "english" or "nepali"
+    language_1_ts_name              TEXT,       -- guess from pg_catalog.pg_ts_config, e.g. "english" or "nepali"
 
-    language_2_cld2_name            VARCHAR(255),       -- second likely language name
-    language_2_language_cname       VARCHAR(255),       -- etc.
-    language_2_language_code        VARCHAR(255),
-    language_2_script_name          VARCHAR(255),
-    language_2_script_code          VARCHAR(255),
-    language_2_percent              SMALLINT,
+    language_2_cld2_name            TEXT,       -- second likely language name
+    language_2_language_cname       TEXT,       -- etc.
+    language_2_language_code        TEXT,
+    language_2_script_name          TEXT,
+    language_2_script_code          TEXT,
+    language_2_percent              INTEGER,
     language_2_normalized_score     DOUBLE PRECISION,
-    language_2_ts_name              VARCHAR(255),
+    language_2_ts_name              TEXT,
 
-    language_3_cld2_name            VARCHAR(255),       -- third likely language name
-    language_3_language_cname       VARCHAR(255),       -- etc.
-    language_3_language_code        VARCHAR(255),
-    language_3_script_name          VARCHAR(255),
-    language_3_script_code          VARCHAR(255),
-    language_3_percent              SMALLINT,
+    language_3_cld2_name            TEXT,       -- third likely language name
+    language_3_language_cname       TEXT,       -- etc.
+    language_3_language_code        TEXT,
+    language_3_script_name          TEXT,
+    language_3_script_code          TEXT,
+    language_3_percent              INTEGER,
     language_3_normalized_score     DOUBLE PRECISION,
-    language_3_ts_name              VARCHAR(255)
+    language_3_ts_name              TEXT
 
 );
 
 CREATE FUNCTION pg_cld2_detect_language_internal(
-    INOUT   result_record           pg_cld2_language_detection,
-    INOUT   text_to_analyze         TEXT,
+    IN      text_to_analyze         TEXT,
     IN      is_plain_text           BOOLEAN,
     IN      content_language_hint   TEXT,
     IN      tld_hint                TEXT,
@@ -65,8 +64,7 @@ DECLARE
     || E'DECLARE\n'
     || E'  return_record pg_cld2_language_detection;\n'
     || E'BEGIN\n'
-    || E'  PERFORM pg_cld2_detect_language(\n'
-    || E'    return_record,           -- instance of pg_cld2_language_detection composite type\n'
+    || E'  return_record := pg_cld2_detect_language(\n'
     || E'    text_to_analyze,         -- required\n'
     || E'    is_plain_text,           -- boolean, default true. Parses HTML if false\n'
     || E'    content_language_hint,   -- text. Ex: "mi,en" boosts Maori & English\n'
@@ -78,7 +76,16 @@ DECLARE
     || E'    locale_hint              -- text, 1st 2 chars, overrides tld_hint.\n'
     || E'  );\n'
     || E'  RAISE NOTICE ''language is %%'', return_record.language_1_pg_name;\n'
-    || E'  -- See "\d pg_cld2_language_detection" for the return_record field names.'
+    || E'\n'
+    || E'  -- or:\n'
+    || E'  SELECT pg_cld2_detect_language(...) INTO return_record;\n'
+    || E'\n'
+    || E'  -- See "\d pg_cld2_language_detection" for the return_record field names.\n'
+    || E'  -- The awkwardness is due to needing to set or return a pg_cld2_language_detection record\n'
+    || E'  -- while also passing the text as an INOUT reference so it doesn''t get copied if very large.\n'
+    || E'  -- It''s simpler to just return the record than editing in place, so the first parameter is ignored,\n'
+    || E'  -- but it has to be there so that the return value can be RECORD instead of TEXT like the text.\n'
+    || E'  -- Maybe they''ll loosen this up in a future version of PostgreSQL.'
     ;
 BEGIN
     RETURN usage
@@ -95,15 +102,14 @@ $$;
 -- So the caller needs to create an instance of pg_cld2_language_detection ENUM type first,
 -- and pass that as a parameter.
 CREATE FUNCTION pg_cld2_detect_language(
-    INOUT   result_record           pg_cld2_language_detection,     -- you can pass NULL or a dummy record
-    INOUT   text_to_analyze         TEXT,                           -- Pass as pointer
+    IN      text_to_analyze         TEXT,                           -- Hopefully it won't copy, but INOUT doesn't actually make a diff
     IN      is_plain_text           BOOLEAN DEFAULT TRUE,           -- NULL or TRUE = TRUE; FALSE = FALSE
     IN      content_language_hint   TEXT DEFAULT NULL,
     IN      tld_hint                TEXT DEFAULT NULL,
     IN      cld2_language_hint      TEXT DEFAULT NULL,
     IN      best_effort             BOOLEAN DEFAULT TRUE,           -- NULL or TRUE = TRUE; FALSE = FALSE
-    IN      text_encoding           VARCHAR(32) DEFAULT 'UTF8',     -- the Postgres encoding name
-    IN      tsconfig_language_hint  TEXT DEFAULT NULL,
+    IN      text_encoding           TEXT DEFAULT 'UTF8',            -- the Postgres encoding name
+    IN      tsconfig_language_hint  TEXT DEFAULT NULL,              -- overrides cld2_language_hint if a specific language
     IN      locale_lang_hint        TEXT DEFAULT NULL
 )
 RETURNS RECORD
@@ -113,19 +119,18 @@ $$
 DECLARE
     encoding_hint           INTEGER DEFAULT NULL;
     lang_from_locale        VARCHAR(4) DEFAULT NULL;
+    lang_from_tsconfig      TEXT DEFAULT NULL;
+    result_record           pg_cld2_language_detection;
 BEGIN
 
     -- check parameters
     IF text_to_analyze  IS NULL
     THEN
-        RAISE EXCEPTION pg_cld2_usage();
+        RAISE EXCEPTION '%', pg_cld2_usage();
     END IF;
 
-    IF (tsconfig_language_hint IS NOT NULL) THEN
+    IF (tsconfig_language_hint IS NOT NULL AND tsconfig_language_hint != 'simple') THEN
         cld2_language_hint := UPPER(tsconfig_language_hint);
-        IF (cld2_language_hint = 'SIMPLE') THEN
-            cld2_language_hint := NULL;  -- could be UNKNOWN_LANGUAGE but same diff
-        END IF;
     END IF;
 
     IF (locale_lang_hint IS NOT NULL) THEN
@@ -155,7 +160,6 @@ BEGIN
 
     -- return the result of the C call
     SELECT pg_cld2_detect_language_internal(
-        result_record,
         text_to_analyze,        -- text
         is_plain_text,          -- boolean
         content_language_hint,  -- text
@@ -198,10 +202,10 @@ BEGIN
         result_record.language_3_ts_name = 'simple';
     END IF;
 
-    IF result_record.text_bytes == result_record.valid_prefix_bytes THEN
-        result_record.valid_utf8 := TRUE;
+    IF result_record.text_bytes = result_record.valid_prefix_bytes THEN
+        result_record.is_valid_utf8 := TRUE;
     ELSE
-        result_record.valid_utf8 := FALSE;
+        result_record.is_valid_utf8 := FALSE;
     END IF;
 
 
@@ -213,7 +217,7 @@ CREATE TABLE IF NOT EXISTS pg_cld2_encodings (
     cld2_encoding_name  VARCHAR(32)         NOT NULL,
     pg_encoding_name    VARCHAR(32),
     cld2_const_value    SMALLINT            NOT NULL,
-    notes               VARCHAR(255),
+    notes               TEXT,
 
     PRIMARY KEY (cld2_encoding_name),
     UNIQUE (cld2_const_value)

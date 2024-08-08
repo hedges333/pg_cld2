@@ -1,6 +1,14 @@
 pg_cld2 1.0.0
 =============
 
+NOTE
+----
+
+THIS IS A DEVELOPMENT VERSION AND HAS NOT BEEN FINISHED YET.
+Despite the "1.0.0" version.  It does, however, compile and execute,
+which is getting somewhere.  It just doesn't return any results yet.
+(2024-08-08)
+
 Synopsis
 --------
 
