@@ -33,8 +33,6 @@ COPY sample_text(
 FROM :'sample_tsv'
 WITH (FORMAT csv, DELIMITER E'\t', HEADER false);
 
--- SELECT * FROM sample_text;
-
 
 CREATE OR REPLACE FUNCTION process_sample_texts()
 RETURNS TABLE (
@@ -187,23 +185,3 @@ $$ LANGUAGE plpgsql;
 
 SELECT * from process_sample_texts();
 
--- DO $$
--- DECLARE
---     sample_text_rec RECORD;
---     result pg_cld2_language_detection;
--- BEGIN
---     FOR sample_text_rec in (SELECT * FROM sample_text) LOOP
---         result := pg_cld2_detect_language(
---             sample_text_rec.text_to_analyze,
---             sample_text_rec.is_plain_text,
---             sample_text_rec.content_language_hint,
---             sample_text_rec.tld_hint,
---             sample_text_rec.cld2_language_hint,
---             sample_text_rec.best_effort,
---             sample_text_rec.text_encoding,
---             sample_text_rec.tsconfig_language_hint,
---             sample_text_rec.locale_lang_hint
---         );
---     END LOOP;
--- END;
--- $$;
