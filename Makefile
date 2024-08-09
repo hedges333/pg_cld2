@@ -44,6 +44,7 @@ REGRESS = $(notdir $(basename $(wildcard test/sql/*.sql)))
 #REGRESS = tests-01
 
 REGRESS_OPTS = --inputdir=test --outputdir=test
+BUILDDIR := $(shell pwd)
 TESTDIR_ABS := $(shell pwd)/test
 
 installcheck: all
@@ -81,6 +82,7 @@ clean:
 
 uninstall:
 	@echo $(DATA_FILENAMES)
+	cat $(EXTENSION_UNINSTALL) | sudo -u postgres psql postgres
 	rm -fv '$(DESTDIR)$(pkglibdir)/$(MODULE_big).so'
 	$(foreach filename, $(DATA_FILENAMES), rm -fv '$(DESTDIR)$(datadir)/extension/$(filename)';)
 

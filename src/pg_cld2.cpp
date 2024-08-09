@@ -15,6 +15,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <syslog.h>  // temporary for debugging
 #if PG_VERSION_NUM >= 160000
 #include "varatt.h"
 #endif
@@ -28,9 +29,19 @@ PG_FUNCTION_INFO_V1(pg_cld2_detect_language_internal);
 #include <cld2/public/compact_lang_det.h>
 #include <cld2/public/encodings.h>
 
+// dummy dev function to figure out why exceptions don't seem to throw under pg_regress
+// (but they do from `psql`)
 Datum
 pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
 {
+    ereport(ERROR, errmsg("really what is going on here?"));
+}
+/*
+Datum
+pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
+{
+
+    // openlog("pg_cld2", LOG_PID | LOG_CONS, LOG_LOCAL5);
 
     // make sure this is called in a context that accepts a record return type
     TupleDesc tuple_desc;
@@ -50,7 +61,7 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     // 5:   encoding_hint           INTEGER     SJS boosts Japanese
     // 6:   best_effort             BOOLEAN     Whether to set kCLDFlagBestEffort
 
-    /* **** */
+    // ****
     // 0:   input_text              TEXT        The text to be examined.
     if (PG_ARGISNULL(0)) {
         ereport(ERROR,
@@ -68,10 +79,15 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     // but even an INOUT parameter might be copied internally, so it might be a copy anyway.
     char *cld2_input_str_ptr = VARDATA_ANY(pg_input_text);
 
+    ereport(ERROR, errmsg("FOO BAR"));
+    // ereport(ERROR, errmsg("input_text: |%s|", "FOO BAR"));
+    // syslog(LOG_ERR, "input_text: |%s|", "FOO BAR");
+    // closelog();
+
     // Get the length of the string data
     int cld2_input_str_len = VARSIZE_ANY_EXHDR(pg_input_text);
 
-    /* **** */
+    // ****
     // 1:   is_plain_text           BOOLEAN     Or decode HTML (and MD?) if false.
     bool is_plain_text = true;
     if (!PG_ARGISNULL(1)) {
@@ -85,7 +101,7 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     cld2_hints.encoding_hint = CLD2::UTF8;
     cld2_hints.language_hint = CLD2::UNKNOWN_LANGUAGE;
 
-    /* **** */
+    // ****
     // 2:   content_language_hint   TEXT        "mi,en" boosts Maori and English
     text *content_language_hint = NULL;
     if (!PG_ARGISNULL(2)) {
@@ -93,7 +109,7 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         cld2_hints.content_language_hint = text_to_cstring(content_language_hint);
     }
 
-    /* **** */
+    // ****
     // 3:   tld_hint                TEXT        "id" boosts Indonesian
     text *tld_hint = NULL;
     if (!PG_ARGISNULL(3)) {
@@ -101,7 +117,7 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         cld2_hints.tld_hint = text_to_cstring(tld_hint);
     }
 
-    /* **** */
+    // ****
     // 4:   language_hint           TEXT        "ITALIAN" boosts it
     text *language_hint = NULL;
     if (!PG_ARGISNULL(4)) {
@@ -110,7 +126,7 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         cld2_hints.language_hint = CLD2::GetLanguageFromName( language_hint_cstr_const );
     }
 
-    /* **** */
+    // ****
     // 5:   encoding_hint           INTEGER     SJS boosts Japanese
     // The PL/pgsql wrapper function will always send Unicode, but this will be passed
     // if the source text was encoded differently and was specified as such, to give
@@ -127,7 +143,7 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         .language_hint          = cld2_hints.language_hint
     };
 
-    /* **** */
+    // ****
     // 6:   best_effort             BOOLEAN     Whether to set kCLDFlagBestEffort
     //      flags                   INTEGER
     // This is mostly for debugging.  However, we set it with kCLDFlagBestEffort if not de-requested
@@ -325,3 +341,4 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     PG_RETURN_DATUM(HeapTupleGetDatum(tuple));
 }
 
+*/

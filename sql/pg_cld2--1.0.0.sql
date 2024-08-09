@@ -113,7 +113,6 @@ CREATE FUNCTION pg_cld2_detect_language(
     IN      locale_lang_hint        TEXT DEFAULT NULL
 )
 RETURNS RECORD
-LANGUAGE plpgsql
 AS
 $$
 DECLARE
@@ -121,6 +120,17 @@ DECLARE
     lang_from_locale        VARCHAR(4) DEFAULT NULL;
     lang_from_tsconfig      TEXT DEFAULT NULL;
     result_record           pg_cld2_language_detection;
+    diag_returned_sqlstate      TEXT;
+    diag_column_name            TEXT;
+    diag_constraint_name        TEXT;
+    diag_pg_datatype_name       TEXT;
+    diag_message_text           TEXT;
+    diag_table_name             TEXT;
+    diag_schema_name            TEXT;
+    diag_pg_exception_detail    TEXT;
+    diag_pg_exception_hint      TEXT;
+    diag_pg_exception_context   TEXT;
+
 BEGIN
 
     -- check parameters
@@ -159,7 +169,11 @@ BEGIN
     END IF;
 
     -- return the result of the C call
-    SELECT pg_cld2_detect_language_internal(
+    -- SELECT * INTO result_record FROM pg_cld2_detect_language_internal(
+
+    -- BEGIN
+
+    result_record := pg_cld2_detect_language_internal(
         text_to_analyze,        -- text
         is_plain_text,          -- boolean
         content_language_hint,  -- text
@@ -167,7 +181,74 @@ BEGIN
         cld2_language_hint,     -- text
         encoding_hint,          -- int
         best_effort             -- boolean
-    ) INTO result_record;
+    );
+        -- RAISE EXCEPTION 'it got an error';
+
+    -- EXCEPTION
+        -- WHEN OTHERS THEN
+            -- GET STACKED DIAGNOSTICS
+                -- diag_returned_sqlstate = RETURNED_SQLSTATE,
+                -- diag_column_name = COLUMN_NAME,
+                -- diag_constraint_name = CONSTRAINT_NAME,
+                -- diag_pg_datatype_name = PG_DATATYPE_NAME,
+                -- diag_message_text = MESSAGE_TEXT,
+                -- diag_table_name = TABLE_NAME,
+                -- diag_schema_name = SCHEMA_NAME,
+                -- diag_pg_exception_detail = PG_EXCEPTION_DETAIL,
+                -- diag_pg_exception_hint = PG_EXCEPTION_HINT;
+            -- RAISE NOTICE '%', diag_message_text;
+            -- RAISE EXCEPTION 'wtf';
+            -- RAISE EXCEPTION 'wtf message_text="%" pg_exception_detail="%" pg_exception_hint="%"',
+                -- diag_pg_message_text,
+                -- diag_pg_exception_detail,
+                -- diag_pg_exception_hint;
+            -- RETURN NULL;
+    -- END;
+
+--     )AS t(
+--     input_bytes                     INTEGER,            
+--     text_bytes                      INTEGER,            
+--     is_reliable                     BOOLEAN,            
+--     valid_prefix_bytes              INTEGER,            
+--     is_valid_utf8                   BOOLEAN,            
+-- 
+--     mll_cld2_name                   TEXT,       
+--     mll_language_cname              TEXT,       
+--     mll_language_code               TEXT,       
+--     mll_script_name                 TEXT,       
+--     mll_script_code                 TEXT,       
+--     mll_ts_name                     TEXT,       
+-- 
+--     language_1_cld2_name            TEXT,       
+--     language_1_language_cname       TEXT,       
+--     language_1_language_code        TEXT,       
+--     language_1_script_name          TEXT,       
+--     language_1_script_code          TEXT,       
+--     language_1_percent              INTEGER,            
+--     language_1_normalized_score     DOUBLE PRECISION,   
+--     language_1_ts_name              TEXT,       
+-- 
+--     language_2_cld2_name            TEXT,       
+--     language_2_language_cname       TEXT,       
+--     language_2_language_code        TEXT,
+--     language_2_script_name          TEXT,
+--     language_2_script_code          TEXT,
+--     language_2_percent              INTEGER,
+--     language_2_normalized_score     DOUBLE PRECISION,
+--     language_2_ts_name              TEXT,
+-- 
+--     language_3_cld2_name            TEXT,       
+--     language_3_language_cname       TEXT,       
+--     language_3_language_code        TEXT,
+--     language_3_script_name          TEXT,
+--     language_3_script_code          TEXT,
+--     language_3_percent              INTEGER,
+--     language_3_normalized_score     DOUBLE PRECISION,
+--     language_3_ts_name              TEXT
+-- );
+
+    -- RAISE EXCEPTION 'called the function. input_bytes=%', result_record.input_bytes;
+
 
     -- now figure out the language pg_name's from the cld2 name or code
     SELECT cfgname
@@ -211,7 +292,7 @@ BEGIN
 
     RETURN result_record;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 
 CREATE TABLE IF NOT EXISTS pg_cld2_encodings (
     cld2_encoding_name  VARCHAR(32)         NOT NULL,
