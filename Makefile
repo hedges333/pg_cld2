@@ -43,7 +43,7 @@ export SHLIB_LINK
 REGRESS = $(notdir $(basename $(wildcard test/sql/*.sql)))
 #REGRESS = tests-01
 
-REGRESS_OPTS = --inputdir=test --outputdir=test
+REGRESS_OPTS = --inputdir=test --outputdir=test --dbname=pg_cld2_regression --debug
 BUILDDIR := $(shell pwd)
 TESTDIR_ABS := $(shell pwd)/test
 

@@ -8,15 +8,19 @@ CREATE TYPE pg_cld2_language_detection AS (
     mll_cld2_name                   TEXT,       -- first language name, e.g. "ENGLISH" or "NEPALI"
     mll_language_cname              TEXT,       -- language name, e.g. "ENGLISH" or "NEPALI" (only minor differences)
     mll_language_code               TEXT,       -- language code, e.g. "en" or "ne"
-    mll_script_name                 TEXT,       -- script name, e.g. "Latin" or "Devanagari"
-    mll_script_code                 TEXT,       -- script code, e.g. "Latn" or "Deva"
+    mll_primary_script_name         TEXT,       -- first pick of script names, e.g. "Latin" or "Devanagari"
+    mll_primary_script_code         TEXT,       -- first pick of script codes, e.g. "Latn" or "Deva"
+    mll_script_names                TEXT,       -- all possible script names, e.g. "Latin,Devanagari" or "Devanagari,Latin" (skips "Common")
+    mll_script_codes                TEXT,       -- all possible script codes, e.g. "Latn,Deva" or "Deva,Latn" (skips "Zyyy")
     mll_ts_name                     TEXT,       -- guess from pg_catalog.pg_ts_config, e.g. "english" or "nepali"
 
     language_1_cld2_name            TEXT,       -- first language name, e.g. "ENGLISH" or "NEPALI"
     language_1_language_cname       TEXT,       -- language name, e.g. "ENGLISH" or "NEPALI" (only minor differences)
     language_1_language_code        TEXT,       -- language code, e.g. "en" or "ne"
-    language_1_script_name          TEXT,       -- script name, e.g. "Latin" or "Devanagari"
-    language_1_script_code          TEXT,       -- script code, e.g. "Latn" or "Deva"
+    language_1_primary_script_name  TEXT,       -- script name, e.g. "Latin" or "Devanagari"
+    language_1_primary_script_code  TEXT,       -- script code, e.g. "Latn" or "Deva"
+    language_1_script_names         TEXT,       -- script names, e.g. "Latin,Devanagari" or "Devanagari,Latin"
+    language_1_script_codes         TEXT,       -- script code, e.g. "Latn,Deva" or "Deva,Latn"
     language_1_percent              INTEGER,            -- how likely this language is
     language_1_normalized_score     DOUBLE PRECISION,   -- mumble mumble
     language_1_ts_name              TEXT,       -- guess from pg_catalog.pg_ts_config, e.g. "english" or "nepali"
@@ -24,6 +28,8 @@ CREATE TYPE pg_cld2_language_detection AS (
     language_2_cld2_name            TEXT,       -- second likely language name
     language_2_language_cname       TEXT,       -- etc.
     language_2_language_code        TEXT,
+    language_2_primary_script_names TEXT,       -- script name, e.g. "Latin" or "Devanagari"
+    language_2_primary_script_codes TEXT,       -- script code, e.g. "Latn" or "Deva"
     language_2_script_name          TEXT,
     language_2_script_code          TEXT,
     language_2_percent              INTEGER,
@@ -33,6 +39,8 @@ CREATE TYPE pg_cld2_language_detection AS (
     language_3_cld2_name            TEXT,       -- third likely language name
     language_3_language_cname       TEXT,       -- etc.
     language_3_language_code        TEXT,
+    language_3_primary_script_names TEXT,       -- script name, e.g. "Latin" or "Devanagari"
+    language_3_primary_script_codes TEXT,       -- script code, e.g. "Latn" or "Deva"
     language_3_script_name          TEXT,
     language_3_script_code          TEXT,
     language_3_percent              INTEGER,
@@ -105,7 +113,7 @@ CREATE FUNCTION pg_cld2_detect_language(
     IN      text_to_analyze         TEXT,                           -- Hopefully it won't copy, but INOUT doesn't actually make a diff
     IN      is_plain_text           BOOLEAN DEFAULT TRUE,           -- NULL or TRUE = TRUE; FALSE = FALSE
     IN      content_language_hint   TEXT DEFAULT NULL,
-    IN      tld_hint                TEXT DEFAULT NULL,
+    IN      tld_hint                TEXT DEFAULT '',
     IN      cld2_language_hint      TEXT DEFAULT NULL,
     IN      best_effort             BOOLEAN DEFAULT TRUE,           -- NULL or TRUE = TRUE; FALSE = FALSE
     IN      text_encoding           TEXT DEFAULT 'UTF8',            -- the Postgres encoding name
@@ -141,6 +149,12 @@ BEGIN
 
     IF (tsconfig_language_hint IS NOT NULL AND tsconfig_language_hint != 'simple') THEN
         cld2_language_hint := UPPER(tsconfig_language_hint);
+    ELSIF tsconfig_language_hint IS NULL THEN
+        tsconfig_language_hint := '';
+    END IF;
+
+    IF cld2_language_hint IS NULL THEN
+        cld2_language_hint := '';
     END IF;
 
     IF (locale_lang_hint IS NOT NULL) THEN
@@ -154,10 +168,20 @@ BEGIN
         END IF;
     END IF;
 
+    IF content_language_hint IS NULL THEN
+        content_language_hint := '';
+    END IF;
+
+    IF tld_hint IS NULL THEN
+        tld_hint := '';
+    END IF;
+
     -- ensure conversion to utf8
     IF text_encoding != 'UTF8' THEN
         text_to_analyze := convert(text_to_analyze, 'UTF8', text_encoding);
+    END IF;
 
+    IF text_encoding IS NOT NULL THEN
         -- We still send the original encoding as a hint,
         -- transliterated into the constant value that CLD2 uses
         -- (probably-ish)
@@ -168,12 +192,31 @@ BEGIN
         -- or leave it NULL if not found
     END IF;
 
+    IF encoding_hint IS NULL THEN
+        encoding_hint = -1;  -- special value - can't pass null
+    END IF;
+
+    IF best_effort IS NULL THEN
+        best_effort = TRUE;
+    END IF;
+
     -- return the result of the C call
-    -- SELECT * INTO result_record FROM pg_cld2_detect_language_internal(
+
 
     -- BEGIN
 
-    result_record := pg_cld2_detect_language_internal(
+    /*
+    RAISE NOTICE 'text_to_analyze=%', text_to_analyze;
+    RAISE NOTICE 'is_plain_text=%', is_plain_text;
+    RAISE NOTICE 'content_language_hint=%', content_language_hint;
+    RAISE NOTICE 'tld_hint=%', tld_hint;
+    RAISE NOTICE 'cld2_language_hint=%', cld2_language_hint;
+    RAISE NOTICE 'encoding_hint=%', encoding_hint;
+    RAISE NOTICE 'best_effort=%', best_effort;
+    */
+
+
+    SELECT * INTO result_record FROM pg_cld2_detect_language_internal(
         text_to_analyze,        -- text
         is_plain_text,          -- boolean
         content_language_hint,  -- text
@@ -181,74 +224,55 @@ BEGIN
         cld2_language_hint,     -- text
         encoding_hint,          -- int
         best_effort             -- boolean
+    ) AS t(
+        input_bytes                     INTEGER,
+        text_bytes                      INTEGER,
+        is_reliable                     BOOLEAN,
+        valid_prefix_bytes              INTEGER,
+        is_valid_utf8                   BOOLEAN,
+
+        mll_cld2_name                   TEXT,
+        mll_language_cname              TEXT,
+        mll_language_code               TEXT,
+        mll_primary_script_name         TEXT,
+        mll_primary_script_code         TEXT,
+        mll_script_names                TEXT,
+        mll_script_codes                TEXT,
+        mll_ts_name                     TEXT,
+
+        language_1_cld2_name            TEXT,
+        language_1_language_cname       TEXT,
+        language_1_language_code        TEXT,
+        language_1_primary_script_name  TEXT,
+        language_1_primary_script_code  TEXT,
+        language_1_script_names         TEXT,
+        language_1_script_codes         TEXT,
+        language_1_percent              INTEGER,
+        language_1_normalized_score     DOUBLE PRECISION,
+        language_1_ts_name              TEXT,
+
+        language_2_cld2_name            TEXT,
+        language_2_language_cname       TEXT,
+        language_2_language_code        TEXT,
+        language_2_primary_script_name  TEXT,
+        language_2_primary_script_code  TEXT,
+        language_2_script_names         TEXT,
+        language_2_script_codes         TEXT,
+        language_2_percent              INTEGER,
+        language_2_normalized_score     DOUBLE PRECISION,
+        language_2_ts_name              TEXT,
+
+        language_3_cld2_name            TEXT,
+        language_3_language_cname       TEXT,
+        language_3_language_code        TEXT,
+        language_3_primary_script_name  TEXT,
+        language_3_primary_script_code  TEXT,
+        language_3_script_names         TEXT,
+        language_3_script_codes         TEXT,
+        language_3_percent              INTEGER,
+        language_3_normalized_score     DOUBLE PRECISION,
+        language_3_ts_name              TEXT
     );
-        -- RAISE EXCEPTION 'it got an error';
-
-    -- EXCEPTION
-        -- WHEN OTHERS THEN
-            -- GET STACKED DIAGNOSTICS
-                -- diag_returned_sqlstate = RETURNED_SQLSTATE,
-                -- diag_column_name = COLUMN_NAME,
-                -- diag_constraint_name = CONSTRAINT_NAME,
-                -- diag_pg_datatype_name = PG_DATATYPE_NAME,
-                -- diag_message_text = MESSAGE_TEXT,
-                -- diag_table_name = TABLE_NAME,
-                -- diag_schema_name = SCHEMA_NAME,
-                -- diag_pg_exception_detail = PG_EXCEPTION_DETAIL,
-                -- diag_pg_exception_hint = PG_EXCEPTION_HINT;
-            -- RAISE NOTICE '%', diag_message_text;
-            -- RAISE EXCEPTION 'wtf';
-            -- RAISE EXCEPTION 'wtf message_text="%" pg_exception_detail="%" pg_exception_hint="%"',
-                -- diag_pg_message_text,
-                -- diag_pg_exception_detail,
-                -- diag_pg_exception_hint;
-            -- RETURN NULL;
-    -- END;
-
---     )AS t(
---     input_bytes                     INTEGER,            
---     text_bytes                      INTEGER,            
---     is_reliable                     BOOLEAN,            
---     valid_prefix_bytes              INTEGER,            
---     is_valid_utf8                   BOOLEAN,            
--- 
---     mll_cld2_name                   TEXT,       
---     mll_language_cname              TEXT,       
---     mll_language_code               TEXT,       
---     mll_script_name                 TEXT,       
---     mll_script_code                 TEXT,       
---     mll_ts_name                     TEXT,       
--- 
---     language_1_cld2_name            TEXT,       
---     language_1_language_cname       TEXT,       
---     language_1_language_code        TEXT,       
---     language_1_script_name          TEXT,       
---     language_1_script_code          TEXT,       
---     language_1_percent              INTEGER,            
---     language_1_normalized_score     DOUBLE PRECISION,   
---     language_1_ts_name              TEXT,       
--- 
---     language_2_cld2_name            TEXT,       
---     language_2_language_cname       TEXT,       
---     language_2_language_code        TEXT,
---     language_2_script_name          TEXT,
---     language_2_script_code          TEXT,
---     language_2_percent              INTEGER,
---     language_2_normalized_score     DOUBLE PRECISION,
---     language_2_ts_name              TEXT,
--- 
---     language_3_cld2_name            TEXT,       
---     language_3_language_cname       TEXT,       
---     language_3_language_code        TEXT,
---     language_3_script_name          TEXT,
---     language_3_script_code          TEXT,
---     language_3_percent              INTEGER,
---     language_3_normalized_score     DOUBLE PRECISION,
---     language_3_ts_name              TEXT
--- );
-
-    -- RAISE EXCEPTION 'called the function. input_bytes=%', result_record.input_bytes;
-
 
     -- now figure out the language pg_name's from the cld2 name or code
     SELECT cfgname
