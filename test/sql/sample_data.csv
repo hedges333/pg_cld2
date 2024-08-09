@@ -1,3 +1,4 @@
+text_to_analyze,is_plain_text,content_language_hint,tld_hint,cld2_language_hint,best_effort,text_encoding,tsconfig_language_hint,locale_lang_hint
 "Mistah Kurtz - he dead.
 
 A penny for the Old Guy
@@ -135,3 +136,128 @@ This is the way the world ends
 Not with a bang but with a whimper.
 ",TRUE,,,,,,,
 "Four score and seven years ago our fathers brought forth on this continent a new nation, conceived in liberty, and dedicated to the proposition that all men are created equal. Now we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure. We are met on a great battlefield of that war. We have come to dedicate a portion of that field as a final resting place for those who here gave their lives that that nation might live. It is altogether fitting and proper that we should do this. But in a larger sense we cannot dedicate, we cannot consecrate, we cannot hallow this ground. The brave men, living and dead, who struggled here have consecrated it, far above our poor power to add or detract. The world will little note, nor long remember, what we say here, but it can never forget what they did here. It is for us the living, rather, to be dedicated here to the unfinished work which they who fought here have thus far so nobly advanced. It is rather for us to be here dedicated to the great task remaining before us,that from these honored dead we take increased devotion to that cause for which they gave the last full measure of devotion, that we here highly resolve that these dead shall not have died in vain, that this nation, under God, shall have a new birth of freedom, and that government of the people, by the people, for the people, shall not perish from the earth.",TRUE,,,,,,,
+"I
+
+Marseille.--L'arrivée.
+
+
+Le 24 février 1815, la vigie de Notre-Dame de la Garde signala le
+trois-mâts le _Pharaon_, venant de Smyrne, Trieste et Naples.
+
+Comme d'habitude, un pilote côtier partit aussitôt du port, rasa le
+château d'If, et alla aborder le navire entre le cap de Morgion et l'île
+de Rion.
+
+Aussitôt, comme d'habitude encore, la plate-forme du fort Saint-Jean
+s'était couverte de curieux; car c'est toujours une grande affaire à
+Marseille que l'arrivée d'un bâtiment, surtout quand ce bâtiment, comme
+le _Pharaon_, a été construit, gréé, arrimé sur les chantiers de la
+vieille Phocée, et appartient à un armateur de la ville.
+
+Cependant ce bâtiment s'avançait; il avait heureusement franchi le
+détroit que quelque secousse volcanique a creusé entre l'île de
+Calasareigne et l'île de Jaros; il avait doublé Pomègue, et il
+s'avançait sous ses trois huniers, son grand foc et sa brigantine, mais
+si lentement et d'une allure si triste, que les curieux, avec cet
+instinct qui pressent un malheur, se demandaient quel accident pouvait
+être arrivé à bord. Néanmoins les experts en navigation reconnaissaient
+que si un accident était arrivé, ce ne pouvait être au bâtiment
+lui-même; car il s'avançait dans toutes les conditions d'un navire
+parfaitement gouverné: son ancre était en mouillage, ses haubans de
+beaupré décrochés; et près du pilote, qui s'apprêtait à diriger le
+_Pharaon_ par l'étroite entrée du port de Marseille, était un jeune
+homme au geste rapide et à l'oeil actif, qui surveillait chaque
+mouvement du navire et répétait chaque ordre du pilote.
+
+La vague inquiétude qui planait sur la foule avait particulièrement
+atteint un des spectateurs de l'esplanade de Saint-Jean, de sorte qu'il
+ne put attendre l'entrée du bâtiment dans le port; il sauta dans une
+petite barque et ordonna de ramer au-devant du _Pharaon_, qu'il
+atteignit en face de l'anse de la Réserve.
+
+En voyant venir cet homme, le jeune marin quitta son poste à côté du
+pilote, et vint, le chapeau à la main, s'appuyer à la muraille du
+bâtiment.
+
+C'était un jeune homme de dix-huit à vingt ans, grand, svelte, avec de
+beaux yeux noirs et des cheveux d'ébène; il y avait dans toute sa
+personne cet air calme et de résolution particulier aux hommes habitués
+depuis leur enfance à lutter avec le danger.
+",TRUE,,,,,,,
+"<?xml version=""1.0"" encoding=""UTF-8""?>
+<!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.1//EN"" ""http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"">
+<html xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"">
+<head>
+<!-- [analytics] Following part will be processed automatically. Do not edit manually. -->
+<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src=""https://www.googletagmanager.com/gtag/js?id=UA-25336693-4""></script>
+<script>
+// <![CDATA[
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-25336693-4');
+// ]]>
+</script>
+<!-- [analytics] End of the part -->
+<meta http-equiv=""Content-Type"" content=""text/html; charset=UTF-8"" />
+<meta name=""viewport"" content=""width=device-width, initial-scale=1"" />
+<title>広島市原爆死没者慰霊式並びに平和祈念式あいさつ（岸田内閣総理大臣） - データベース『世界と日本』</title>
+<link href=""/css/style.css"" rel=""stylesheet"" />
+<link href=""/css/style_s.css"" rel=""stylesheet"" media=""only all and (max-width:760px)"" />
+<script src=""/js/common.js""></script>
+</head>
+<body>
+<!--
+20230806.S1J
+首相官邸
+広島市原爆死没者慰霊式並びに平和祈念式あいさつ（岸田内閣総理大臣）
+2023年8月6日
+
+
+https://www.kantei.go.jp/jp/101_kishida/statement/2023/0806hiroshima.html（2023年8月10日アクセス）
+-->
+<div>データベース『世界と日本』（代表：田中明彦）</div>
+<div>日本政治・国際関係データベース</div>
+<div>政策研究大学院大学・東京大学東洋文化研究所</div>
+<p>[文書名]　広島市原爆死没者慰霊式並びに平和祈念式あいさつ（岸田内閣総理大臣）
+</p>
+<div>[場所]　
+</div>
+<div>[年月日]　2023年8月6日
+</div>
+<div>[出典]　首相官邸
+</div>
+<div>[備考]　
+</div>
+<div>[全文]　</div>
+<p>
+</p>
+<p>
+　今から７８年前の今日、一発の原子爆弾により、十数万ともいわれる貴い命が失われました。街は焦土と化し、人々の夢や明るい未来が一瞬にして奪われ、一命をとりとめた方々にも、言葉では言い表せない苦難の日々をもたらしました。内閣総理大臣として、ここに犠牲となられた方々の御霊（みたま）に対し、謹んで、哀悼の誠を捧（ささ）げます。そして、今なお、後遺症に苦しむ方々に対し、心からのお見舞いを申し上げます。
+</p>
+<p>
+　核兵器によってもたらされた広島、長崎の惨禍は、決して繰り返してはなりません。我が国は、引き続き非核三原則を堅持しながら、唯一の戦争被爆国として、「核兵器のない世界」の実現に向けた努力をたゆまず続けます。
+</p>
+<p>
+　現在、核軍縮を巡る国際社会の分断の深まりやロシアによる核の威嚇等により、その道のりは一層厳しいものになっています。しかし、このような状況だからこそ、「核兵器のない世界」の実現に向け、国際的な機運を今一度呼び戻すことが重要です。
+</p>
+<p>
+　「核兵器のない世界」の実現に向けた確固たる歩みを進める上で原点となるのは、被爆の実相への正確な理解です。本年５月のＧ７広島サミットでは、世界のリーダーたちに、被爆者の声を聞いていただき、被爆の実相や平和を願う人々の思いに直接触れていただきました。また、世界の指導者のみならず、若者等による広島、長崎訪問を促しました。各国首脳による胸襟を開いた議論や「核軍縮に関するＧ７首脳広島ビジョン」の発出を通じ、核軍縮の進展に向けた国際社会の機運を今一度高めることができました。既に始まっている国際賢人会議の議論も踏まえながら、「核兵器のない世界」の実現に向け、引き続き積極的に取り組んでまいります。また、被爆者の方々の平和への思いを次の世代へとしっかりとつないでいくための取組については、今後とも、「ユース非核リーダー基金」のプログラムなども通じ、積極的に行ってまいります。
+</p>
+<p>
+　被爆者の方々に対しましては、保健、医療、福祉にわたる支援の必要性をしっかりと受け止め、原爆症の認定について、できる限り迅速な審査を行うなど、引き続き、高齢化が進む被爆者の方々に寄り添いながら、総合的な援護施策を推進してまいります。
+</p>
+<p>
+　結びに、国際平和文化都市として、見事に発展を遂げた、ここ広島市において、核兵器のない世界と恒久平和の実現に向けて力を尽くすことを改めてお誓い申し上げます。原子爆弾の犠牲となられた方々の御冥福と、御遺族、被爆者の皆様、並びに、御参列、広島市民の皆様の御平安を祈念いたしまして、私の挨拶といたします。
+</p>
+<p>
+令和５年８月６日
+</p>
+<p>
+内閣総理大臣・岸田文雄
+</p>
+</body>
+</html>
+",TRUE,,,,,,,

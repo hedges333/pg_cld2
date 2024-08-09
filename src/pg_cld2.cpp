@@ -15,7 +15,6 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <syslog.h>  // temporary for debugging
 #if PG_VERSION_NUM >= 160000
 #include "varatt.h"
 #endif
@@ -29,21 +28,9 @@ PG_FUNCTION_INFO_V1(pg_cld2_detect_language_internal);
 #include <cld2/public/compact_lang_det.h>
 #include <cld2/public/encodings.h>
 
-// dummy dev function to figure out why exceptions don't seem to throw under pg_regress
-// (but they do from `psql`)
-/*
 Datum
 pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
 {
-    ereport(ERROR, errmsg("really what is going on here?"));
-}
-*/
-
-Datum
-pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
-{
-
-    // openlog("pg_cld2", LOG_PID | LOG_CONS, LOG_LOCAL5);
 
     // make sure this is called in a context that accepts a record return type
     TupleDesc tuple_desc;
@@ -72,7 +59,6 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
             )
         );
     }
-    // ereport(ERROR, errmsg("FOO BAR QUX"));
 
     // Get the text parameter as a PG Datum
     text *pg_input_text = PG_GETARG_TEXT_PP(0);
@@ -81,11 +67,6 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     // Well, *probably* noice, if PG figures out that we're not changing it,
     // but even an INOUT parameter might be copied internally, so it might be a copy anyway.
     char *cld2_input_str_ptr = VARDATA_ANY(pg_input_text);
-
-    // ereport(ERROR, errmsg("FOO BAR"));
-    // ereport(ERROR, errmsg("input_text: |%s|", cld2_input_str_ptr));
-    // syslog(LOG_ERR, "input_text: |%s|", "FOO BAR");
-    // closelog();
 
     // Get the length of the string data
     int cld2_input_str_len = VARSIZE_ANY_EXHDR(pg_input_text);
@@ -103,7 +84,6 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     cld2_hints.tld_hint = "";
     cld2_hints.encoding_hint = CLD2::UTF8;
     cld2_hints.language_hint = CLD2::UNKNOWN_LANGUAGE;
-    // ereport(ERROR, errmsg("QUX: %i", cld2_hints.encoding_hint));
 
     // ****
     // 2:   content_language_hint   TEXT        "mi,en" boosts Maori and English
@@ -136,13 +116,11 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     // if the source text was encoded differently and was specified as such, to give
     // CLD2 a hint about what language it might be.
     if (!PG_ARGISNULL(5)) {
-        // ereport(ERROR, errmsg("QUX: %i", PG_GETARG_INT32(5)));
         cld2_hints.encoding_hint = PG_GETARG_INT32(5);
     }
     if (cld2_hints.encoding_hint == -1) {
         cld2_hints.encoding_hint = CLD2::UTF8;
     }
-    // ereport(ERROR, errmsg("cld2_hints.encoding_hint: |%i|", cld2_hints.encoding_hint));
 
     // the function expects the hints struct parameter to be const
     const CLD2::CLDHints cld2_hints_const = {
@@ -152,7 +130,6 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
         .language_hint          = cld2_hints.language_hint
     };
 
-    // ereport(ERROR, errmsg("cld2_hints_const.encoding_hint: |%i|", cld2_hints_const.encoding_hint));
 
     // ****
     // 6:   best_effort             BOOLEAN     Whether to set kCLDFlagBestEffort
@@ -384,13 +361,6 @@ pg_cld2_detect_language_internal(PG_FUNCTION_ARGS)
     free(mll_ulscriptcode);
     free(mll_ulprimaryscriptname);
     free(mll_ulprimaryscriptcode);
-
-    // free(pg_input_text);
-    // free(cld2_input_str_ptr);
-    // free(content_language_hint);
-    // free(tld_hint);
-    // free(language_hint);
-    // free(tuple_desc);
 
     PG_RETURN_DATUM(HeapTupleGetDatum(tuple));
 }

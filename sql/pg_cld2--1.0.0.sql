@@ -28,10 +28,10 @@ CREATE TYPE pg_cld2_language_detection AS (
     language_2_cld2_name            TEXT,       -- second likely language name
     language_2_language_cname       TEXT,       -- etc.
     language_2_language_code        TEXT,
-    language_2_primary_script_names TEXT,       -- script name, e.g. "Latin" or "Devanagari"
-    language_2_primary_script_codes TEXT,       -- script code, e.g. "Latn" or "Deva"
-    language_2_script_name          TEXT,
-    language_2_script_code          TEXT,
+    language_2_primary_script_name  TEXT,       -- script name, e.g. "Latin" or "Devanagari"
+    language_2_primary_script_code  TEXT,       -- script code, e.g. "Latn" or "Deva"
+    language_2_script_names         TEXT,
+    language_2_script_codes         TEXT,
     language_2_percent              INTEGER,
     language_2_normalized_score     DOUBLE PRECISION,
     language_2_ts_name              TEXT,
@@ -39,10 +39,10 @@ CREATE TYPE pg_cld2_language_detection AS (
     language_3_cld2_name            TEXT,       -- third likely language name
     language_3_language_cname       TEXT,       -- etc.
     language_3_language_code        TEXT,
-    language_3_primary_script_names TEXT,       -- script name, e.g. "Latin" or "Devanagari"
-    language_3_primary_script_codes TEXT,       -- script code, e.g. "Latn" or "Deva"
-    language_3_script_name          TEXT,
-    language_3_script_code          TEXT,
+    language_3_primary_script_name  TEXT,       -- script name, e.g. "Latin" or "Devanagari"
+    language_3_primary_script_code  TEXT,       -- script code, e.g. "Latn" or "Deva"
+    language_3_script_names         TEXT,
+    language_3_script_codes         TEXT,
     language_3_percent              INTEGER,
     language_3_normalized_score     DOUBLE PRECISION,
     language_3_ts_name              TEXT
@@ -57,7 +57,7 @@ CREATE FUNCTION pg_cld2_detect_language_internal(
     IN      cld2_language_hint      TEXT,
     IN      encoding_hint           INTEGER,
     IN      best_effort             BOOLEAN
-) RETURNS RECORD
+) RETURNS pg_cld2_language_detection
 AS 'MODULE_PATHNAME', 'pg_cld2_detect_language_internal'
 LANGUAGE C STRICT;
 
@@ -120,7 +120,7 @@ CREATE FUNCTION pg_cld2_detect_language(
     IN      tsconfig_language_hint  TEXT DEFAULT NULL,              -- overrides cld2_language_hint if a specific language
     IN      locale_lang_hint        TEXT DEFAULT NULL
 )
-RETURNS RECORD
+RETURNS pg_cld2_language_detection
 AS
 $$
 DECLARE
@@ -215,8 +215,7 @@ BEGIN
     RAISE NOTICE 'best_effort=%', best_effort;
     */
 
-
-    SELECT * INTO result_record FROM pg_cld2_detect_language_internal(
+    result_record := pg_cld2_detect_language_internal(
         text_to_analyze,        -- text
         is_plain_text,          -- boolean
         content_language_hint,  -- text
@@ -224,54 +223,6 @@ BEGIN
         cld2_language_hint,     -- text
         encoding_hint,          -- int
         best_effort             -- boolean
-    ) AS t(
-        input_bytes                     INTEGER,
-        text_bytes                      INTEGER,
-        is_reliable                     BOOLEAN,
-        valid_prefix_bytes              INTEGER,
-        is_valid_utf8                   BOOLEAN,
-
-        mll_cld2_name                   TEXT,
-        mll_language_cname              TEXT,
-        mll_language_code               TEXT,
-        mll_primary_script_name         TEXT,
-        mll_primary_script_code         TEXT,
-        mll_script_names                TEXT,
-        mll_script_codes                TEXT,
-        mll_ts_name                     TEXT,
-
-        language_1_cld2_name            TEXT,
-        language_1_language_cname       TEXT,
-        language_1_language_code        TEXT,
-        language_1_primary_script_name  TEXT,
-        language_1_primary_script_code  TEXT,
-        language_1_script_names         TEXT,
-        language_1_script_codes         TEXT,
-        language_1_percent              INTEGER,
-        language_1_normalized_score     DOUBLE PRECISION,
-        language_1_ts_name              TEXT,
-
-        language_2_cld2_name            TEXT,
-        language_2_language_cname       TEXT,
-        language_2_language_code        TEXT,
-        language_2_primary_script_name  TEXT,
-        language_2_primary_script_code  TEXT,
-        language_2_script_names         TEXT,
-        language_2_script_codes         TEXT,
-        language_2_percent              INTEGER,
-        language_2_normalized_score     DOUBLE PRECISION,
-        language_2_ts_name              TEXT,
-
-        language_3_cld2_name            TEXT,
-        language_3_language_cname       TEXT,
-        language_3_language_code        TEXT,
-        language_3_primary_script_name  TEXT,
-        language_3_primary_script_code  TEXT,
-        language_3_script_names         TEXT,
-        language_3_script_codes         TEXT,
-        language_3_percent              INTEGER,
-        language_3_normalized_score     DOUBLE PRECISION,
-        language_3_ts_name              TEXT
     );
 
     -- now figure out the language pg_name's from the cld2 name or code

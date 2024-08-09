@@ -1,5 +1,5 @@
 \x on
-\set ECHO queries
+-- \set ECHO queries
 \set sample_csv `pwd`/test/sql/sample_data.csv
 
 CREATE SCHEMA test_schema;
@@ -33,8 +33,9 @@ COPY sample_text(
     locale_lang_hint
 )
 FROM :'sample_csv'
-WITH (FORMAT csv, HEADER false);
+WITH (FORMAT csv, HEADER true);
 
+SELECT('check 1 2 3') AS mic_check;
 
 CREATE OR REPLACE FUNCTION process_sample_texts()
 RETURNS TABLE (
@@ -160,50 +161,6 @@ BEGIN
             sample_text_rec.text_encoding,
             sample_text_rec.tsconfig_language_hint,
             sample_text_rec.locale_lang_hint
-        ) AS t (
-            input_bytes                 INTEGER,
-            text_bytes                  INTEGER,
-            is_reliable                 BOOLEAN,
-            valid_prefix_bytes          INTEGER,
-            is_valid_utf8               BOOLEAN,
-            mll_cld2_name               TEXT,
-            mll_language_cname          TEXT,
-            mll_language_code           TEXT,
-            mll_primary_script_name     TEXT,
-            mll_primary_script_code     TEXT,
-            mll_script_names            TEXT,
-            mll_script_codes            TEXT,
-            mll_ts_name                 TEXT,
-            language_1_cld2_name        TEXT,
-            language_1_language_cname   TEXT,
-            language_1_language_code    TEXT,
-            language_1_primary_script_name TEXT,
-            language_1_primary_script_code TEXT,
-            language_1_script_names     TEXT,
-            language_1_script_codes     TEXT,
-            language_1_percent          INTEGER,
-            language_1_normalized_score DOUBLE PRECISION,
-            language_1_ts_name          TEXT,
-            language_2_cld2_name        TEXT,
-            language_2_language_cname   TEXT,
-            language_2_language_code    TEXT,
-            language_2_primary_script_name TEXT,
-            language_2_primary_script_code TEXT,
-            language_2_script_names     TEXT,
-            language_2_script_codes     TEXT,
-            language_2_percent          INTEGER,
-            language_2_normalized_score DOUBLE PRECISION,
-            language_2_ts_name          TEXT,
-            language_3_cld2_name        TEXT,
-            language_3_language_cname   TEXT,
-            language_3_language_code    TEXT,
-            language_3_primary_script_name TEXT,
-            language_3_primary_script_code TEXT,
-            language_3_script_names     TEXT,
-            language_3_script_codes     TEXT,
-            language_3_percent          INTEGER,
-            language_3_normalized_score DOUBLE PRECISION,
-            language_3_ts_name          TEXT
         )
     ) AS result;
 END;
