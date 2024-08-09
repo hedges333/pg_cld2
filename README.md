@@ -19,49 +19,48 @@ This will return a record with the structure:
 | Field | Value |
 | ------------------ | ----------------- |
 | input\_bytes                    | 45 |
-
-|text\_bytes                     | 46 |
-|is\_reliable                    | t |
-|valid\_prefix\_bytes             | 45 |
-|is\_valid\_utf8                  | f |
-|mll\_cld2\_name                  | ENGLISH |
-|mll\_language\_cname             | ENGLISH |
-|mll\_language\_code              | en |
-|mll\_primary\_script\_name        | Latin |
-|mll\_primary\_script\_code        | Latn |
-|mll\_script\_names               | Latin |
-|mll\_script\_codes               | Latn |
-|mll\_ts\_name                    | english |
-|language\_1\_cld2\_name           | ENGLISH |
-|language\_1\_language\_cname      | ENGLISH |
-|language\_1\_language\_code       | en |
-|language\_1\_primary\_script\_name | Latin |
-|language\_1\_primary\_script\_code | Latn |
-|language\_1\_script\_names        | Latin |
-|language\_1\_script\_codes        | Latn |
-|language\_1\_percent             | 97 |
-|language\_1\_normalized\_score    | 7.98e-321 |
-|language\_1\_ts\_name             | english |
-|language\_2\_cld2\_name           | Unknown |
-|language\_2\_language\_cname      | UNKNOWN\_LANGUAGE |
-|language\_2\_language\_code       | un |
-|language\_2\_primary\_script\_name | Latin |
-|language\_2\_primary\_script\_code | Latn |
-|language\_2\_script\_names        | Latin |
-|language\_2\_script\_codes        | Latn |
-|language\_2\_percent             | 0 |
-|language\_2\_normalized\_score    | 0 |
-|language\_2\_ts\_name             | simple |
-|language\_3\_cld2\_name           | Unknown |
-|language\_3\_language\_cname      | UNKNOWN\_LANGUAGE |
-|language\_3\_language\_code       | un |
-|language\_3\_primary\_script\_name | Latin |
-|language\_3\_primary\_script\_code | Latn |
-|language\_3\_script\_names        | Latin |
-|language\_3\_script\_codes        | Latn |
-|language\_3\_percent             | 0 |
-|language\_3\_normalized\_score    | 0 |
-|language\_3\_ts\_name             | simple |
+| text\_bytes                     | 46 |
+| is\_reliable                    | t |
+| valid\_prefix\_bytes             | 45 |
+| is\_valid\_utf8                  | f |
+| mll\_cld2\_name                  | ENGLISH |
+| mll\_language\_cname             | ENGLISH |
+| mll\_language\_code              | en |
+| mll\_primary\_script\_name        | Latin |
+| mll\_primary\_script\_code        | Latn |
+| mll\_script\_names               | Latin |
+| mll\_script\_codes               | Latn |
+| mll\_ts\_name                    | english |
+| language\_1\_cld2\_name           | ENGLISH |
+| language\_1\_language\_cname      | ENGLISH |
+| language\_1\_language\_code       | en |
+| language\_1\_primary\_script\_name | Latin |
+| language\_1\_primary\_script\_code | Latn |
+| language\_1\_script\_names        | Latin |
+| language\_1\_script\_codes        | Latn |
+| language\_1\_percent             | 97 |
+| language\_1\_normalized\_score    | 7.98e-321 |
+| language\_1\_ts\_name             | english |
+| language\_2\_cld2\_name           | Unknown |
+| language\_2\_language\_cname      | UNKNOWN\_LANGUAGE |
+| language\_2\_language\_code       | un |
+| language\_2\_primary\_script\_name | Latin |
+| language\_2\_primary\_script\_code | Latn |
+| language\_2\_script\_names        | Latin |
+| language\_2\_script\_codes        | Latn |
+| language\_2\_percent             | 0 |
+| language\_2\_normalized\_score    | 0 |
+| language\_2\_ts\_name             | simple |
+| language\_3\_cld2\_name           | Unknown |
+| language\_3\_language\_cname      | UNKNOWN\_LANGUAGE |
+| language\_3\_language\_code       | un |
+| language\_3\_primary\_script\_name | Latin |
+| language\_3\_primary\_script\_code | Latn |
+| language\_3\_script\_names        | Latin |
+| language\_3\_script\_codes        | Latn |
+| language\_3\_percent             | 0 |
+| language\_3\_normalized\_score    | 0 |
+| language\_3\_ts\_name             | simple |
 
 This is the information provided by `CLD2::ExtDetectLanguageSummaryCheckUTF8`.
 
