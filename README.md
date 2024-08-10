@@ -97,6 +97,64 @@ See `SELECT pg_cld2_usage();`
 
 YMMV.
 
+Type definition of `pg_cld2_language_detection`
+-----------------------------------------------
+
+Here is the type definition with some more informative comments:
+
+```
+CREATE TYPE pg_cld2_language_detection AS (
+    input_bytes                     INTEGER,            -- length of original text (after conversion to utf8)
+    text_bytes                      INTEGER,            -- non-markup bytes
+    is_reliable                     BOOLEAN,            -- CLD2's guess
+    valid_prefix_bytes              INTEGER,            -- if != input_bytes: invalid UTF8 after that byte
+    is_valid_utf8                   BOOLEAN,            -- short answer whether there are invalid utf8 bytes
+
+    mll_cld2_name                   TEXT,       -- first language name, e.g. "ENGLISH" or "NEPALI"
+    mll_language_cname              TEXT,       -- language name, e.g. "ENGLISH" or "NEPALI" (only minor differences)
+    mll_language_code               TEXT,       -- language code, e.g. "en" or "ne"
+    mll_primary_script_name         TEXT,       -- first pick of script names, e.g. "Latin" or "Devanagari"
+    mll_primary_script_code         TEXT,       -- first pick of script codes, e.g. "Latn" or "Deva"
+    mll_script_names                TEXT,       -- all possible script names, e.g. "Latin,Devanagari" or "Devanagari,Latin" (skips "Common")
+    mll_script_codes                TEXT,       -- all possible script codes, e.g. "Latn,Deva" or "Deva,Latn" (skips "Zyyy")
+    mll_ts_name                     TEXT,       -- guess from pg_catalog.pg_ts_config, e.g. "english" or "nepali"
+
+    language_1_cld2_name            TEXT,       -- first language name, e.g. "ENGLISH" or "NEPALI"
+    language_1_language_cname       TEXT,       -- language name, e.g. "ENGLISH" or "NEPALI" (only minor differences)
+    language_1_language_code        TEXT,       -- language code, e.g. "en" or "ne"
+    language_1_primary_script_name  TEXT,       -- script name, e.g. "Latin" or "Devanagari"
+    language_1_primary_script_code  TEXT,       -- script code, e.g. "Latn" or "Deva"
+    language_1_script_names         TEXT,       -- script names, e.g. "Latin,Devanagari" or "Devanagari,Latin"
+    language_1_script_codes         TEXT,       -- script code, e.g. "Latn,Deva" or "Deva,Latn"
+    language_1_percent              INTEGER,            -- how likely this language is
+    language_1_normalized_score     DOUBLE PRECISION,   -- mumble mumble
+    language_1_ts_name              TEXT,       -- guess from pg_catalog.pg_ts_config, e.g. "english" or "nepali"
+
+    language_2_cld2_name            TEXT,       -- second likely language name
+    language_2_language_cname       TEXT,       -- etc.
+    language_2_language_code        TEXT,
+    language_2_primary_script_name  TEXT,       -- script name, e.g. "Latin" or "Devanagari"
+    language_2_primary_script_code  TEXT,       -- script code, e.g. "Latn" or "Deva"
+    language_2_script_names         TEXT,
+    language_2_script_codes         TEXT,
+    language_2_percent              INTEGER,
+    language_2_normalized_score     DOUBLE PRECISION,
+    language_2_ts_name              TEXT,
+
+    language_3_cld2_name            TEXT,       -- third likely language name
+    language_3_language_cname       TEXT,       -- etc.
+    language_3_language_code        TEXT,
+    language_3_primary_script_name  TEXT,       -- script name, e.g. "Latin" or "Devanagari"
+    language_3_primary_script_code  TEXT,       -- script code, e.g. "Latn" or "Deva"
+    language_3_script_names         TEXT,
+    language_3_script_codes         TEXT,
+    language_3_percent              INTEGER,
+    language_3_normalized_score     DOUBLE PRECISION,
+    language_3_ts_name              TEXT
+
+);
+```
+
 Requirements
 ------------
 
