@@ -86,6 +86,8 @@ uninstall:
 	rm -fv '$(DESTDIR)$(pkglibdir)/$(MODULE_big).so'
 	$(foreach filename, $(DATA_FILENAMES), rm -fv '$(DESTDIR)$(datadir)/extension/$(filename)';)
 
+dist:
+	git archive --format zip --prefix=$(EXTENSION)-$(DISTVERSION)/ -o $(EXTENSION)-$(DISTVERSION).zip HEAD
 
 .PHONY: all install uninstall clean test installcheck
 
