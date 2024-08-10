@@ -31,7 +31,6 @@
 
 # Executables
 *.exe
-*.out
 *.app
 *.i*86
 *.x86_64
@@ -56,3 +55,11 @@ dkms.conf
 # vim files
 .*.swp
 .*.swo
+
+# dist files
+*.zip
+
+# pg_regress calls its test output .out... even the expected output
+# but we want to ignore some of them
+test/regression.out
+test/results/*.out
