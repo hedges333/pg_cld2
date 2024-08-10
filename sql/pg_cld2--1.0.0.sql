@@ -68,6 +68,8 @@ CREATE OR REPLACE FUNCTION pg_cld2_usage()
     LANGUAGE plpgsql
 AS $$
 DECLARE
+    usage TEXT;
+BEGIN
     usage := E'usage:\n'
     || E'DECLARE\n'
     || E'  return_record pg_cld2_language_detection;\n'
@@ -95,8 +97,7 @@ DECLARE
     || E'  -- but it has to be there so that the return value can be RECORD instead of TEXT like the text.\n'
     || E'  -- Maybe they''ll loosen this up in a future version of PostgreSQL.'
     ;
-BEGIN
-    RETURN usage
+    RETURN usage;
 END;
 $$;
 

@@ -73,7 +73,37 @@ The `primary_script_name` and `primary_script_code` fields contain the first pic
 of script names and codes.  The subsequent fields contain all the found script names
 and codes in a comma-delimited string, omitting "None" and "Common"/"Zyyy".
 
+It also makes an attempt to look up a match to corresponding configured languages
+in `pg_catalog.pg_ts_config` for `tsvector` search indexing. (`*_ts_name`)
+
+Options
+-------
+
+See `SELECT pg_cld2_usage();`
+
+```
+  return_record := pg_cld2_detect_language(
+     text_to_analyze,         -- required
+     is_plain_text,           -- boolean, default true. Parses HTML if false
+     content_language_hint,   -- text. Ex: "mi,en" boosts Maori & English
+     tld_hint,                -- text. Ex: "id" boosts Indonesian
+     cld2_language_hint,      -- text, default NULL. Ex: "ITALIAN" boosts it. See pg_cld2_languages table.
+     best_effort,             -- boolean, default true. Gives best-effort answer for short text instead of UNKNOWN.
+     text_encoding,           -- text, default UTF8, will copy string if not, also sets encoding hint
+     tsconfig_language_hint,  -- text, default NULL. Looks up in pg_cld2_languages table, overrides cld2_language_hint.
+     locale_hint              -- text, 1st 2 chars, overrides tld_hint.
+  );
+```
+
+YMMV.
+
+Requirements
+------------
+
 The CLD2 libraries must be installed on your system.
+
+Contributing
+------------
 
 I tested it to the point that I determined it returned the results from the
 call to the CLD2 function.  I figure that library tests itself well enough.
